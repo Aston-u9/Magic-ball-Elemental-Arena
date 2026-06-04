@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <title>Magic Ball Arena v79</title>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
@@ -1905,6 +1906,9 @@ setInterval(() => {
   updateBars();
 }, BALL_DEF.mpRegenMs);
 
+  if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+  }
 </script>
 </body>
 </html>
