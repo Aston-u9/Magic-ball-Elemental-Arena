@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Magic Ball Arena v79</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<style>
+body,html{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;touch-action:none;font-family:sans-serif;color:white;}
+canvas{display:block;width:100%!important;height:100%!important;}
+.hidden{display:none!important;}
+#settings-btn{position:absolute;top:20px;left:20px;font-size:30px;z-index:1001;cursor:pointer;}
+#stat-bars{position:absolute;top:22px;left:75px;width:clamp(120px,25vw,180px);z-index:50;pointer-events:none;}
+.bar-container{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.bar-bg{flex-grow:1;height:10px;background:#222;border:1px solid #fff;border-radius:5px;overflow:hidden;}
+#hp-fill{height:100%;background:#22c55e;width:100%;transition:.2s;}
+#mc-fill{height:100%;background:#3b82f6;width:100%;transition:.2s;}
+.stat-text{font-size:11px;font-weight:bold;min-width:30px;text-shadow:1px 1px 2px black;}
+#settings-menu{position:absolute;top:0;left:0;width:300px;height:100%;background:rgba(17,17,17,.98);z-index:2000;padding:25px;transform:translateX(-100%);transition:.3s;border-right:1px solid #444;box-sizing:border-box;overflow-y:auto;}
+#settings-menu.open{transform:translateX(0);}
+.overlay-panel{display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(10,10,20,.98);z-index:3500;overflow-y:auto;padding:20px;box-sizing:border-box;}
+.overlay-panel.open{display:block;}
+.ab-section{background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+.ab-section h4{margin:0 0 6px;font-size:13px;}
+.ab-row{font-size:11px;color:#ccc;margin:3px 0;line-height:1.5;}
+.ab-row b{color:#fff;}
+.matchup-table{width:100%;border-collapse:collapse;font-size:11px;margin:6px 0;}
+.matchup-table th{background:#222;padding:4px;border:1px solid #444;}
+.matchup-table td{padding:3px 5px;border:1px solid #333;}
+#pointer{position:absolute;top:35%;left:50%;width:14px;height:14px;border:2px solid rgba(255,255,255,.85);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:5;}
+#pointer::after{content:'';position:absolute;top:50%;left:50%;width:3px;height:3px;background:white;border-radius:50%;transform:translate(-50%,-50%);}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.85);z-index:100;text-align:center;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px;box-sizing:border-box;}
+button{padding:10px 20px;margin:6px;border-radius:8px;border:1px solid white;background:#3b82f6;color:white;font-weight:bold;cursor:pointer;}
+#end-screen{position:absolute;inset:0;background:rgba(0,0,0,.95);z-index:3000;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;overflow-y:auto;padding:20px;box-sizing:border-box;}
+#end-screen-inner{width:100%;display:flex;flex-direction:column;align-items:center;padding-bottom:40px;}
+#scoreboard{width:100%;max-width:420px;background:#111;border-radius:12px;border:2px solid #3b82f6;padding:14px;box-sizing:border-box;margin:12px 0;}
+.score-team-title{font-size:13px;font-weight:bold;margin:8px 0 4px;padding:4px 8px;border-radius:5px;}
+.score-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;font-size:12px;padding:4px 6px;border-bottom:1px solid #2a2a2a;align-items:center;}
+.score-row.header{color:#aaa;font-size:11px;font-weight:bold;}
+.score-row.player-row{background:rgba(59,130,246,.15);border-radius:4px;}
+.score-row.dead-row{opacity:.45;}
+#game-ui{pointer-events:none;}
+#game-ui.active{pointer-events:auto;}
+#action-grid{position:absolute;bottom:5vh;right:5vw;display:grid;grid-template-columns:55px 55px;gap:12px;z-index:10;}
+.skill-btn{width:55px;height:55px;background:rgba(0,0,0,.4);border:1.5px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;touch-action:none;text-align:center;line-height:1.1;}
+#joy-con{position:absolute;bottom:5vh;left:5vw;width:90px;height:90px;background:rgba(255,255,255,.1);border-radius:50%;}
+#joy-knob{position:absolute;top:25px;left:25px;width:40px;height:40px;background:white;border-radius:50%;opacity:.5;}
+#floating-ui-container{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50;}
+#flash-overlay{position:absolute;inset:0;background:white;opacity:0;pointer-events:none;z-index:4000;}
+#element-label{position:absolute;top:60px;left:75px;font-size:12px;color:#fff;opacity:.7;pointer-events:none;z-index:50;}
+#damage-numbers{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:60;}
+.dmg-num{position:absolute;font-size:16px;font-weight:bold;text-shadow:1px 1px 3px black;pointer-events:none;transform:translate(-50%,-50%);animation:dmgFloat 1s ease-out forwards;}
+@keyframes dmgFloat{0%{opacity:1;transform:translate(-50%,-50%);}100%{opacity:0;transform:translate(-50%,-180%);}}
+#enemy-roster{position:absolute;top:20px;right:15px;display:flex;flex-direction:column;gap:4px;z-index:50;pointer-events:none;}
+.roster-entry{display:flex;align-items:center;gap:5px;background:rgba(0,0,0,.45);border-radius:8px;padding:3px 7px;font-size:13px;transition:opacity .4s;}
+.roster-entry.dead{opacity:.35;filter:grayscale(1);}
+.roster-hp{width:36px;height:5px;background:#333;border-radius:3px;overflow:hidden;}
+.roster-hp-fill{height:100%;background:#ef4444;border-radius:3px;transition:width .2s;}
+.el-pick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:280px;margin:10px auto;}
+.el-pick-btn{padding:10px 8px;border-radius:8px;border:2px solid rgba(255,255,255,.3);color:white;font-weight:bold;cursor:pointer;font-size:13px;}
+.el-pick-btn.selected{border-color:#fff;box-shadow:0 0 8px rgba(255,255,255,.6);}
+.weather-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0 12px;}
+.weather-btn{padding:8px 6px;border-radius:8px;border:2px solid rgba(255,255,255,.25);color:white;font-weight:bold;cursor:pointer;font-size:12px;background:rgba(255,255,255,.08);}
+.weather-btn.active{border-color:#fff;background:rgba(255,255,255,.22);}
+.setting-label{font-size:11px;color:#aaa;margin:10px 0 4px;text-transform:uppercase;letter-spacing:1px;}
+#countdown-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:4500;}
+#countdown-text{font-size:clamp(72px,22vw,160px);font-weight:900;color:#fff;text-shadow:0 0 40px rgba(255,200,0,.9),0 4px 24px rgba(0,0,0,.8);letter-spacing:2px;opacity:0;transform:scale(1.6);transition:opacity .18s,transform .18s;will-change:opacity,transform;}
+</style>
+</head>
+<body>
+<div id="flash-overlay"></div>
+<div id="countdown-overlay"><div id="countdown-text"></div></div>
+<div id="pointer"></div>
+<div id="settings-btn" onclick="toggleSettings()">☰</div>
+
+<div id="settings-menu">
+  <h2>SETTINGS</h2>
+  <div class="setting-label">Sensitivity</div>
+  <input type="range" min="0.002" max="0.02" step="0.001" value="0.008" id="sens-slider" style="width:100%;margin-bottom:4px;">
+  <div class="setting-label">🌤️ Weather</div>
+  <div class="weather-grid">
+    <button class="weather-btn active" id="wbtn-fog" onclick="setWeather('fog')">🌫️ Foggy</button>
+    <button class="weather-btn" id="wbtn-sunny" onclick="setWeather('sunny')">☀️ Sunny</button>
+    <button class="weather-btn" id="wbtn-rain" onclick="setWeather('rain')">🌧️ Rainy</button>
+    <button class="weather-btn" id="wbtn-snow" onclick="setWeather('snow')">❄️ Snowing</button>
+    <button class="weather-btn" id="wbtn-night" onclick="setWeather('night')">🌙 Night</button>
+    <button class="weather-btn" id="wbtn-evening" onclick="setWeather('evening')">🌅 Evening</button>
+  </div>
+  <button onclick="showOverlay('abilities-panel')" style="background:#7c3aed;width:100%;margin-bottom:10px;">📖 ABILITIES</button>
+  <button onclick="settingsBack()" style="background:#4b5563;width:100%;margin-bottom:10px;">◀ BACK</button>
+  <button onclick="toggleSettings()" style="background:#ef4444;width:100%;">✕ CLOSE</button>
+</div>
+
+<div id="abilities-panel" class="overlay-panel">
+  <h2 style="text-align:center;color:#facc15;">📖 ABILITIES</h2>
+  <div class="ab-section">
+    <h4 style="color:#60a5fa;">🏀 BALL PHYSICS — same rules for Player AND every Bot</h4>
+    <div class="ab-row"><b>HP 100 · MP 50</b> — same for all</div>
+    <div class="ab-row"><b>Jump ⬆️</b> — same height for all</div>
+    <div class="ab-row"><b>Normal Dash ⏩</b> — 10 units, joystick direction, coloured trail, no damage</div>
+    <div class="ab-row"><b>Knockback</b> — on hit, decays same rate for all</div>
+    <div class="ab-row"><b>Fall Damage</b> — 5 HP when fall height > 20u</div>
+    <div class="ab-row"><b>MP Regen</b> — +1 MP / 0.8s for all equally</div>
+    <div class="ab-row"><b>Bounce</b> — on hard landing, same coefficient for all</div>
+    <div class="ab-row"><b>Death Burst</b> — HP hits 0: ball bursts in element colour, removed from play</div>
+  </div>
+  <div class="ab-section">
+    <h4 style="color:#f97316;">⚔️ ELEMENT MATCHUPS</h4>
+    <table class="matchup-table">
+      <tr><th>Element</th><th>Strong vs ×130%</th><th>Weak vs ×50%</th></tr>
+      <tr><td>🔥 Fire</td><td>🌿 Verdant · 🌑 Shadow</td><td>🌊 Water · 🌪️ Wind</td></tr>
+      <tr><td>🌊 Water</td><td>🔥 Fire · 🌍 Earth</td><td>⚡ Lightning · 🌿 Verdant</td></tr>
+      <tr><td>⚡ Lightning</td><td>🌊 Water · 🌪️ Wind</td><td>🌍 Earth · 🌿 Verdant</td></tr>
+      <tr><td>🌍 Earth</td><td>⚡ Lightning · ☀️ Light</td><td>🌊 Water · 🌿 Verdant</td></tr>
+      <tr><td>🌪️ Wind</td><td>🌿 Verdant · 🔥 Fire</td><td>⚡ Lightning · ☀️ Light</td></tr>
+      <tr><td>🌿 Verdant</td><td>☀️ Light · 🌊 Water · 🌍 Earth</td><td>🔥 Fire · 🌪️ Wind</td></tr>
+      <tr><td>☀️ Light</td><td>🌑 Shadow ×150% · 🌪️ Wind</td><td>🌍 Earth</td></tr>
+      <tr><td>🌑 Shadow</td><td>All others ×110%</td><td>☀️ Light ×50%</td></tr>
+    </table>
+    <div class="ab-row">Same element: ×70% · Neutral: ×100%</div>
+  </div>
+  <div class="ab-section" style="border-color:#ff6633;"><h4 style="color:#ff6633;">🔥 FIRE</h4>
+    <div class="ab-row"><b>A — Fireball</b> · projectile forward · 10u range · AP 5 / MC 4</div>
+    <div class="ab-row"><b>B — Flamethrower</b> · 25 rapid fireballs · AP 2 each / MC 10</div></div>
+  <div class="ab-section" style="border-color:#00bfff;"><h4 style="color:#00bfff;">🌊 WATER</h4>
+    <div class="ab-row"><b>A — Waterball</b> · projectile forward · 10u range · AP 5 / MC 4</div>
+    <div class="ab-row"><b>B — Water Gun</b> · 25 rapid water shots · AP 2 each / MC 10</div></div>
+  <div class="ab-section" style="border-color:#ffff44;"><h4 style="color:#ffff44;">⚡ LIGHTNING</h4>
+    <div class="ab-row"><b>A — Lightning Shock</b> · arc to nearest enemy · 10u range · AP 5 / MC 4</div>
+    <div class="ab-row"><b>B — Lightning Dash</b> · dashes 22u · jagged trail · hits all in path · AP 12 / MC 10</div></div>
+  <div class="ab-section" style="border-color:#cd853f;"><h4 style="color:#cd853f;">🌍 EARTH</h4>
+    <div class="ab-row"><b>A — Earth Pillar</b> · erupts at pointer · launches enemies high · AP 10 / MC 10</div>
+    <div class="ab-row"><b>B — Dig Hide</b> · underground 6s · untouchable by projectiles · MC 6</div></div>
+  <div class="ab-section" style="border-color:#00ffff;"><h4 style="color:#00ffff;">🌪️ WIND</h4>
+    <div class="ab-row"><b>A — Wind Slash</b> · crescent blade travels forward · 6u range · AP 5 / MC 5</div>
+    <div class="ab-row"><b>B — Cyclone</b> · 5s vortex · lifts caster 8u · sucks + damages nearby · throws on end · AP 10+12 / MC 15</div></div>
+  <div class="ab-section" style="border-color:#22ff88;"><h4 style="color:#22ff88;">🌿 VERDANT</h4>
+    <div class="ab-row"><b>A — Binding Vines</b> · vines at range · −70% speed · 3 HP/s for 5s · MC 5</div>
+    <div class="ab-row"><b>B — Heal</b> · green pillar · heals self + allies 3HP/s for 5s · MC 15</div></div>
+  <div class="ab-section" style="border-color:#ffffaa;"><h4 style="color:#ffffaa;">☀️ LIGHT</h4>
+    <div class="ab-row"><b>A — Flash</b> · 4s full whiteout ALL balls · exposes underground + invisible · MC 5</div>
+    <div class="ab-row"><b>B — Light Dash</b> · dashes 22u · beam trail · hits all in path · AP 12 / MC 10</div></div>
+  <div class="ab-section" style="border-color:#aa66ff;"><h4 style="color:#aa66ff;">🌑 SHADOW</h4>
+    <div class="ab-row"><b>A — Invisibility</b> · invisible 10s · no shadow or status bar · MC 5</div>
+    <div class="ab-row"><b>B — Shadow Beam</b> · 25 rapid shadow shots · AP 10 each / MC 10</div></div>
+  <button onclick="hideOverlay('abilities-panel')" style="background:#ef4444;width:100%;margin-top:10px;">✕ CLOSE</button>
+</div>
+
+<div id="screen-home" class="screen">
+  <h1>MAGIC BALL</h1>
+  <button onclick="navTo('screen-element');window.gameMode='test'">TEST GROUND</button>
+  <button onclick="navTo('screen-battle')">BATTLE GROUND</button>
+</div>
+<div id="screen-battle" class="screen hidden">
+  <h2>ARENA</h2>
+  <button onclick="startModeFlow('1v1')">1 vs 1</button>
+  <button onclick="startModeFlow('1v2')">1 vs 2</button>
+  <button onclick="startModeFlow('1v3')">1 vs 3</button>
+  <button onclick="startModeFlow('1v4')">1 vs 4</button>
+  <button onclick="startModeFlow('1v5')">1 vs 5</button>
+  <button onclick="startModeFlow('1v10')">1 vs 10</button>
+  <button onclick="navTo('screen-element');window.gameMode='2v2'">2 vs 2</button>
+  <button onclick="navTo('screen-element');window.gameMode='4v4'">4 vs 4</button>
+  <button onclick="handleBack()" style="background:gray">BACK</button>
+</div>
+<div id="screen-enemy-element" class="screen hidden">
+  <h2>ENEMY ELEMENT</h2>
+  <p style="font-size:12px;color:#aaa;margin:0 0 8px;">Choose element to fight</p>
+  <div class="el-pick-grid" id="enemy-el-btns"></div>
+  <button onclick="navTo('screen-element')" style="background:#22c55e;margin-top:10px;">✓ CONFIRM</button>
+  <button onclick="handleBack()" style="background:gray;width:100px;">BACK</button>
+</div>
+<div id="screen-element" class="screen hidden">
+  <h2>SELECT YOUR ELEMENT</h2>
+  <div id="el-btns" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+  <button onclick="handleBack()" style="background:gray;margin-top:20px;width:100px;">BACK</button>
+</div>
+<div id="screen-difficulty" class="screen hidden">
+  <h2>SELECT DIFFICULTY</h2>
+  <button onclick="setDifficulty('easy')" style="background:#22c55e">EASY</button>
+  <button onclick="setDifficulty('normal')" style="background:#3b82f6">NORMAL</button>
+  <button onclick="setDifficulty('hard')" style="background:#ef4444">HARD</button>
+  <button onclick="handleBack()" style="background:gray;margin-top:20px;width:100px;">BACK</button>
+</div>
+
+<div id="game-ui" class="hidden">
+  <div id="stat-bars">
+    <div class="bar-container"><div class="bar-bg"><div id="hp-fill"></div></div><div class="stat-text" id="hp-val">100</div></div>
+    <div class="bar-container" style="width:80%;"><div class="bar-bg"><div id="mc-fill"></div></div><div class="stat-text" id="mc-val">50</div></div>
+  </div>
+  <div id="element-label"></div>
+  <div id="damage-numbers"></div>
+  <div id="enemy-roster"></div>
+  <div id="floating-ui-container"></div>
+  <div id="joy-con"><div id="joy-knob"></div></div>
+  <div id="action-grid">
+    <div class="skill-btn" id="btn-a" ontouchstart="playerCastA()">A</div>
+    <div class="skill-btn" style="border-radius:12px;" id="btn-jump" ontouchstart="playerJump()">⬆️</div>
+    <div class="skill-btn" id="btn-b" ontouchstart="playerCastB()">B</div>
+    <div class="skill-btn" style="border-radius:12px;" id="btn-dash" ontouchstart="playerNormalDash()">⏩</div>
+  </div>
+</div>
+<div id="end-screen" class="hidden">
+  <div id="end-screen-inner">
+    <h1 id="end-title" style="margin:10px 0;">YOU WIN!</h1>
+    <div id="scoreboard"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px;">
+      <button onclick="restartGame()" style="background:#22c55e">PLAY AGAIN</button>
+      <button onclick="goBackFromEnd()" style="background:gray">BACK</button>
+      <button onclick="location.reload()" style="background:#3b82f6">MENU</button>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  SECTION 1 — BALL PHYSICS                                        ║
+// ║  All movement, gravity, knockback, bounce, fall damage,          ║
+// ║  collision.  Identical for Player and every Bot.                 ║
+// ║  To change ball feel: edit only this section.                    ║
+// ╚══════════════════════════════════════════════════════════════════╝
+const BALL_DEF = {
+  // — Stats —
+  maxHp: 100,
+  maxMp: 50,
+  // — Movement —
+  jumpVY: 0.44,         // jump launch velocity
+  normalDashDist: 10,   // normal dash distance (units)
+  skillDashDist: 22,    // elemental skill-dash distance (units)
+  // — Physics —
+  gravity: 0.02,        // gravity pull per frame
+  bounceDamp: 0.35,     // bounce coefficient on hard landing
+  kbDecay: 0.72,        // knockback velocity decay per frame
+  // — Damage rules —
+  fallDmgHeight: 20,    // fall height (units) before damage triggers
+  fallDmgAmt: 5,        // HP lost from a damaging fall
+  radius: 1,            // ball collision radius
+  // — MP regen —
+  mpRegen: 1,           // MP gained per tick
+  mpRegenMs: 800,       // tick interval (ms)
+};
+
+// tickPhysics — runs every frame for EVERY ball (player and bot)
+// Handles: underground cloak, knockback, gravity, bounce, fall damage,
+//          arena boundary, env collision push, ball-to-ball collision,
+//          heal/invis/blind timers, cyclone tick
+function tickPhysics(b) {
+  // — Underground state: ball hidden beneath arena, CAN still move XZ —
+  // Movement speed is 50% (undergroundSlowed flag).
+  // Can be hit by Earth Pillar (expels) and Binding Vines (slows stack).
+  if (b.underground) {
+    b.mesh.position.y = -1.2;
+    b.vY = 0;
+    if (b.floatingUI) b.floatingUI.style.display = 'none';
+    // Slide still applies underground (earth pillar can expel)
+    if (b.slideVX || b.slideVZ) {
+      b.mesh.position.x += b.slideVX;
+      b.mesh.position.z += b.slideVZ;
+      b.slideVX *= 0.84;
+      b.slideVZ *= 0.84;
+      if (Math.abs(b.slideVX) < 0.002) b.slideVX = 0;
+      if (Math.abs(b.slideVZ) < 0.002) b.slideVZ = 0;
+    }
+    const ugv = new THREE.Vector2(b.mesh.position.x, b.mesh.position.z);
+    if (ugv.length() > AR - 1) { ugv.normalize().multiplyScalar(AR - 1); b.mesh.position.x = ugv.x; b.mesh.position.z = ugv.y; }
+    b.undergroundTimer--;
+    if (b.undergroundTimer <= 0) {
+      b.underground = false;
+      b.undergroundSlowed = false;
+      b.mesh.material.opacity = 1;
+      b.mesh.material.transparent = false;
+      b.mesh.material.needsUpdate = true;
+      b.mesh.position.y = GY;
+    }
+    return;
+  }
+
+  // — Knockback slide — identical model to boulder rolling —
+  // slideVX/slideVZ store the current slide velocity (set on hit).
+  // Each frame: move by full velocity, multiply by 0.84 friction (same as boulders).
+  // NO vY change — ball stays on the ground and slides back in units.
+  if (b.slideVX || b.slideVZ) {
+    b.mesh.position.x += b.slideVX;
+    b.mesh.position.z += b.slideVZ;
+    b.slideVX *= 0.84;
+    b.slideVZ *= 0.84;
+    if (Math.abs(b.slideVX) < 0.002) b.slideVX = 0;
+    if (Math.abs(b.slideVZ) < 0.002) b.slideVZ = 0;
+  }
+
+  // — Gravity + bounce + fall damage —
+  if (!b.cyclone) {
+    const prevVY = b.vY;
+    b.vY -= BALL_DEF.gravity;
+    b.mesh.position.y += b.vY;
+    if (b.mesh.position.y <= GY) {
+      // Balloon bounce: if caster just landed after cyclone ended
+      if (b.cycloneBalloonLand) {
+        b.cycloneBalloonLand = false;
+        // High bounce coefficient like a balloon — 0.75
+        b.vY = Math.abs(prevVY) * 0.75;
+        b.mesh.position.y = GY;
+      } else {
+        // Impact damage — scales with landing speed, only if fallen from > 20 units
+        if (prevVY < -0.35 && (b.lastGroundY || GY) - GY > BALL_DEF.fallDmgHeight) {
+          const impactDmg = Math.min(15, Math.floor(Math.abs(prevVY) * 3.125));
+          if (impactDmg > 0) {
+            b.hp -= impactDmg;
+            showDmgAt(b.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), impactDmg, '#ff8800');
+            if (b.hp <= 0) { killBall(b, null); return; }
+          }
+        }
+        b.mesh.position.y = GY;
+        b.vY = prevVY < -0.3 ? -prevVY * BALL_DEF.bounceDamp : 0;
+        b.lastGroundY = GY;
+      }
+    } else if (b.mesh.position.y > GY + 0.1) {
+      b.lastGroundY = Math.max(b.lastGroundY || GY, b.mesh.position.y);
+    }
+  }
+
+  // — Arena boundary clamp —
+  const bv2 = new THREE.Vector2(b.mesh.position.x, b.mesh.position.z);
+  if (bv2.length() > AR - 1) {
+    bv2.normalize().multiplyScalar(AR - 1);
+    b.mesh.position.x = bv2.x;
+    b.mesh.position.z = bv2.y;
+  }
+
+  // — Environment object collision push —
+  for (const d of destructibles) {
+    if (d.userData.sinking || d.userData.envType === 'bush') continue;
+    const bdx = b.mesh.position.x - d.position.x;
+    const bdz = b.mesh.position.z - d.position.z;
+    const bd = Math.sqrt(bdx * bdx + bdz * bdz);
+    const minDist = (d.userData.radius || 1) + 1;
+    if (bd < minDist && bd > 0.001) {
+      // Push ball out of object
+      b.mesh.position.x = d.position.x + (bdx / bd) * (minDist + 0.05);
+      b.mesh.position.z = d.position.z + (bdz / bd) * (minDist + 0.05);
+      // Boulders get pushed by the ball contacting them
+      if (d.userData.envType === 'boulder' && d.userData.vel) {
+        const ballSpeedX = (b.isPlayerControlled && isDashing) ? dashDirX * 1.25 : (b.slideVX || 0);
+        const ballSpeedZ = (b.isPlayerControlled && isDashing) ? dashDirZ * 1.25 : (b.slideVZ || 0);
+        const push = (-bdx / bd) * 0.18 + ballSpeedX * 0.35;
+        const pushZ = (-bdz / bd) * 0.18 + ballSpeedZ * 0.35;
+        // Cap contribution so a fast-sliding ball doesn't catapult the boulder
+        d.userData.vel.x += Math.max(-0.3, Math.min(0.3, push));
+        d.userData.vel.z += Math.max(-0.3, Math.min(0.3, pushZ));
+      }
+    }
+  }
+
+  // — Ball-to-ball collision — proper elastic physics ───────────────
+  // Uses the real contact normal (vector between centers) for natural feel.
+  // Velocity (slideVX/slideVZ) is projected onto the contact normal,
+  // exchanged elastically, and the balls separate cleanly.
+  // Cyclone casters skip each other — prevents underground glitch.
+  // Tiers only apply for dash-vs-standing to add game feel on top.
+  for (const other of allBalls) {
+    if (other === b || other.underground || other.invisible) continue;
+    // Two cyclone casters never interact — prevents Y fighting underground
+    if (b.cyclone && other.cyclone) continue;
+
+    const dx = b.mesh.position.x - other.mesh.position.x;
+    const dz = b.mesh.position.z - other.mesh.position.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    const minDist = BALL_DEF.radius * 2; // 2.0 — exact surface contact
+    if (dist >= minDist || dist < 0.001) continue;
+
+    // Contact normal: unit vector from other → b
+    const nx = dx / dist, nz = dz / dist;
+
+    // Separate: push each out by half the overlap so they sit exactly touching
+    const overlap = minDist - dist;
+    b.mesh.position.x     += nx * overlap * 0.5;
+    b.mesh.position.z     += nz * overlap * 0.5;
+    other.mesh.position.x -= nx * overlap * 0.5;
+    other.mesh.position.z -= nz * overlap * 0.5;
+
+    // Project each ball's velocity onto the contact normal
+    const bVn     = (b.slideVX || 0) * nx + (b.slideVZ || 0) * nz;
+    const otherVn = (other.slideVX || 0) * nx + (other.slideVZ || 0) * nz;
+
+    // Only resolve if balls are moving toward each other
+    if (bVn - otherVn >= 0) continue;
+
+    // Dash tier check — dashing ball transfers more momentum
+    const tierOf = ball =>
+      (ball.dashEl != null)                                        ? 3 :
+      (ball.isPlayerControlled ? isDashing : ball._normalDashing) ? 2 : 1;
+    const ta = tierOf(b), tb = tierOf(other);
+
+    // Elastic impulse along contact normal (equal mass)
+    // j = impulse scalar
+    const restitution = 0.72; // bounciness — feels like rubber balls
+    const j = -(1 + restitution) * (bVn - otherVn) / 2;
+
+    // Apply impulse scaled by tier ratio so higher tier dominates
+    const tierRatio = ta === tb ? 1 : ta > tb ? 1.6 : 0.6;
+    const jA =  j * tierRatio;
+    const jB = -j / tierRatio;
+
+    b.slideVX     = (b.slideVX     || 0) + nx * jA;
+    b.slideVZ     = (b.slideVZ     || 0) + nz * jA;
+    other.slideVX = (other.slideVX || 0) + nx * jB;
+    other.slideVZ = (other.slideVZ || 0) + nz * jB;
+
+    // Cap slide speed so no ball rockets off uncontrollably
+    const capSpd = (ta === 3 || tb === 3) ? 2.8 : 1.8;
+    const bSpd = Math.sqrt(b.slideVX**2 + b.slideVZ**2);
+    if (bSpd > capSpd) { b.slideVX *= capSpd/bSpd; b.slideVZ *= capSpd/bSpd; }
+    const oSpd = Math.sqrt(other.slideVX**2 + other.slideVZ**2);
+    if (oSpd > capSpd) { other.slideVX *= capSpd/oSpd; other.slideVZ *= capSpd/oSpd; }
+  }
+
+  // — Heal visuals follow ball position —
+  if (b.healMesh) { b.healMesh.position.x = b.mesh.position.x; b.healMesh.position.z = b.mesh.position.z; }
+  if (b.healRing) { b.healRing.position.x = b.mesh.position.x; b.healRing.position.z = b.mesh.position.z; }
+
+  // — Status timers —
+  if (b.invisible && b.invisTimer > 0) {
+    b.invisTimer--;
+    if (b.invisTimer <= 0) { b.invisible = false; b.mesh.material.opacity = 1; b.mesh.material.transparent = false; b.mesh.material.needsUpdate = true; }
+  }
+  if (b.blinded && b.blindTimer > 0) { b.blindTimer--; if (b.blindTimer <= 0) b.blinded = false; }
+  if (b.slowed && b.vY === 0) b.slowed = false;
+
+  // — Cyclone tick (wind skill state) —
+  tickCyclone(b);
+}
+
+// ── SECTION 1: FORCE TIERS ─────────────────────────────────────────
+// Three force levels used throughout the game:
+//   >= 6  — elemental skill dash hit (strongest)
+//   >= 3  — normal dash body impact  (medium)
+//   < 3   — projectile / push        (light)
+//
+// applyKb — inject knockback force into a target.
+//   Neutralisation rule: if the target already has KB velocity running
+//   OPPOSITE to the incoming force AND its magnitude is >= the new force,
+//   the forces neutralise (both sides cancel proportionally).
+//   Greater force always overcomes lesser force (net = difference).
+//   Equal forces cancel completely → both bounce back symmetrically.
+function applyKb(target, fromX, fromZ, force) {
+  const dx = target.mesh.position.x - fromX, dz = target.mesh.position.z - fromZ;
+  const len = Math.sqrt(dx * dx + dz * dz) || 1;
+  const nx = dx / len, nz = dz / len;
+
+  // Use the same boulder slide model — add to slideVX/slideVZ
+  // Opposing slide cancels, stronger wins by net difference
+  const existingAlongN = (target.slideVX || 0) * nx + (target.slideVZ || 0) * nz;
+  const slideSpd = force * 0.18; // scale force to slide units (like boulder vel)
+
+  if (existingAlongN < 0) {
+    const resist = -existingAlongN;
+    if (resist >= slideSpd) {
+      const net = resist - slideSpd;
+      target.slideVX = nx * (-net) + ((target.slideVX || 0) - existingAlongN * nx);
+      target.slideVZ = nz * (-net) + ((target.slideVZ || 0) - existingAlongN * nz);
+    } else {
+      const net = slideSpd - resist;
+      target.slideVX = nx * net + ((target.slideVX || 0) - existingAlongN * nx);
+      target.slideVZ = nz * net + ((target.slideVZ || 0) - existingAlongN * nz);
+    }
+  } else {
+    target.slideVX = (target.slideVX || 0) + nx * slideSpd;
+    target.slideVZ = (target.slideVZ || 0) + nz * slideSpd;
+  }
+
+  // Upward launch only for very strong hits (skill dash level force >= 6)
+  if (force >= 6) target.vY = Math.max(target.vY, 0.32);
+  // lighter hits: no vY — stays on ground
+}
+
+//   Compares force tiers of both balls and applies correct outcome:
+//   skill-dash(3) > normal-dash(2) > standing(1).
+//   Equal tiers → both bounce back.  Higher tier always overcomes lower.
+function resolveDashCollision(a, b, nx, nz) {
+  const tierOf = ball => {
+    if (ball.dashEl !== null && ball.dashEl !== undefined) return 3;
+    if (ball.isPlayerControlled ? isDashing : ball._normalDashing) return 2;
+    return 1;
+  };
+  const ta = tierOf(a), tb = tierOf(b);
+  if (ta === tb) {
+    const BOUNCE = ta === 3 ? 7 : ta === 2 ? 4 : 2;
+    const liftAmt = ta === 3 ? 0.36 : 0.18;
+    a.kbx -= nx * BOUNCE; a.kbz -= nz * BOUNCE; a.vY = Math.max(a.vY, liftAmt);
+    b.kbx += nx * BOUNCE; b.kbz += nz * BOUNCE; b.vY = Math.max(b.vY, liftAmt);
+  } else {
+    const aWins = ta > tb;
+    const loser = aWins ? b : a, winner = aWins ? a : b;
+    const sign  = aWins ? 1 : -1;
+    loser.kbx  += nx * sign * 8; loser.kbz  += nz * sign * 8; loser.vY  = Math.max(loser.vY, 0.32);
+    winner.kbx -= nx * sign * 1; winner.kbz -= nz * sign * 1; // slight recoil for winner
+  }
+}
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  SECTION 2 — BATTLE MECHANICS                                    ║
+// ║  Damage calculation, element matchups, projectile spawning,      ║
+// ║  projectile collision, kill/win/lose, scoreboard.                ║
+// ╚══════════════════════════════════════════════════════════════════╝
+const COLORS    = { fire:'#ff4500', water:'#00bfff', lightning:'#ffff00', earth:'#8b4513', wind:'#00ffff', verdant:'#00ff00', light:'#ffffcc', shadow:'#330066' };
+const EL_EMOJI  = { fire:'🔥', water:'🌊', lightning:'⚡', earth:'🌍', wind:'🌪️', verdant:'🌿', light:'☀️', shadow:'🌑' };
+const SKILL_LABELS = { fire:{a:'🔥Ball',b:'🔥Flame'}, water:{a:'💧Ball',b:'💧Gun'}, lightning:{a:'⚡Arc',b:'⚡Dash'}, earth:{a:'🌍Pillar',b:'🌍Hide'}, wind:{a:'🌪️Slash',b:'🌪️Cycln'}, verdant:{a:'🌿Vine',b:'🌿Heal'}, light:{a:'☀️Flash',b:'☀️Dash'}, shadow:{a:'🌑Invis',b:'🌑Beam'} };
+
+// Element matchup tables
+const STRONG = { fire:['verdant','shadow'], water:['fire','earth'], lightning:['water','wind'], earth:['lightning','light'], wind:['verdant','fire'], verdant:['light','water','earth'], light:['shadow','wind'], shadow:['fire','water','lightning','earth','wind','verdant','light'] };
+const WEAK   = { fire:['water','wind'], water:['lightning','verdant'], lightning:['earth','verdant'], earth:['water','verdant'], wind:['lightning','light'], verdant:['fire','wind'], light:['earth','verdant'], shadow:['light'] };
+
+function getDmgMult(atk, def) {
+  if (atk === def) return 0.7;
+  if (atk === 'light' && def === 'shadow') return 1.5;
+  if (atk === 'shadow') return def === 'light' ? 0.5 : 1.1;
+  if (STRONG[atk]?.includes(def)) return 1.3;
+  if (WEAK[atk]?.includes(def)) return 0.5;
+  return 1.0;
+}
+function calcDmg(ap, atkEl, defEl) { return ap * getDmgMult(atkEl, defEl); }
+
+function dealDmg(shooter, target, ap) {
+  const dmg = calcDmg(ap, shooter.element, target.element);
+  target.hp -= dmg;
+  if (!target.damagers) target.damagers = new Set();
+  target.damagers.add(shooter);
+  shooter.stats.dmg += dmg;
+  showDmgAt(target.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), dmg, shooter.isAlly ? '#ffff44' : '#ff4444');
+  if (target.hp <= 0) killBall(target, shooter);
+  return dmg;
+}
+
+function spawnProj(b, vx, vy, vz, life, ap, radius) {
+  const r = radius || 0.65;
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(r), new THREE.MeshBasicMaterial({ color: COLORS[b.element], transparent: true, opacity: 0.75 })));
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(r * 0.28), new THREE.MeshBasicMaterial({ color: 0xffffff })));
+  g.position.set(b.mesh.position.x, b.mesh.position.y + 0.5, b.mesh.position.z);
+  g.userData = { vx, vy, vz, life, fromAlly: b.isAlly, element: b.element, ap, shooter: b };
+  scene.add(g); projectiles.push(g);
+}
+
+// Tiny 2-4 particle clash — replaces spawnBurst for projectile collisions
+function spawnClash(pos, col1, col2) {
+  const count = 2 + Math.floor(Math.random() * 3); // 2-4 particles
+  for (let i = 0; i < count; i++) {
+    const ang = Math.random() * Math.PI * 2, sp = 0.15 + Math.random() * 0.22;
+    const col = i % 2 === 0 ? col1 : col2;
+    // life: 55 so opacity starts at 1.0 (frac = life/55), size 0.22 so visible
+    spawnPart(pos.clone(), Math.cos(ang) * sp, 0.10 + Math.random() * 0.12, Math.sin(ang) * sp, col, 55, 0.22);
+  }
+}
+
+function checkProjCollide(p, i) {
+  for (let j = projectiles.length - 1; j >= 0; j--) {
+    if (j === i) continue;
+    const q = projectiles[j];
+    if (q.userData.fromAlly === p.userData.fromAlly) continue;
+    if (p.position.distanceTo(q.position) > 1.4) continue;
+    const collidePos = p.position.clone().add(q.position).multiplyScalar(0.5);
+    const col1 = COLORS[p.userData.element], col2 = COLORS[q.userData.element];
+    // Reduce AP by the opponent's AP (stronger projectile wins, weaker weakens)
+    const pAP = p.userData.ap;
+    const qAP = q.userData.ap;
+    p.userData.ap -= qAP;
+    q.userData.ap -= pAP;
+    // Small clash poof — 2-4 particles max
+    spawnClash(collidePos, col1, col2);
+    // Remove whichever hit zero or below
+    if (q.userData.ap <= 0) { scene.remove(q); projectiles.splice(j, 1); if (j < i) i--; }
+    if (p.userData.ap <= 0) { scene.remove(p); projectiles.splice(i, 1); return true; }
+    return false;
+  }
+  return false;
+}
+
+function killBall(b, killer) {
+  if (!allBalls.includes(b)) return;
+  if (killer) { killer.stats.kills++; b.damagers.forEach(d => { if (d !== killer && d !== b) d.stats.assists++; }); }
+  b.mesh.visible = false;
+  deadBalls.push(b);
+  const mesh = b.mesh, fui = b.floatingUI;
+  spawnBurst(mesh.position.clone(), COLORS[b.element], null);
+  rosterMap.forEach((e, bk) => { if (!allBalls.includes(bk)) { e.classList.add('dead'); e._hF.style.width = '0%'; } else e._hF.style.width = Math.max(0, bk.hp / bk.maxHp * 100) + '%'; });
+  allBalls.splice(allBalls.indexOf(b), 1);
+  setTimeout(() => { scene.remove(mesh); if (fui) fui.remove(); }, 950);
+  if (b.isPlayerControlled) {
+    if (isDying) return; isDying = true;
+    setTimeout(() => { isGameOver = true; buildScoreboard(); document.getElementById('end-title').innerText = 'YOU LOST 💀'; document.getElementById('end-screen').classList.remove('hidden'); }, 1100);
+  } else checkWin();
+}
+
+function checkWin() {
+  if (isGameOver) return;
+  if (window.gameMode === 'test') { setTimeout(() => { if (!isGameOver) createDummy(); }, 2000); return; }
+  if (allBalls.filter(b => !b.isAlly).length === 0) {
+    setTimeout(() => { isGameOver = true; buildScoreboard(); document.getElementById('end-title').innerText = 'YOU WIN! 🏆'; document.getElementById('end-screen').classList.remove('hidden'); }, 1100);
+  }
+}
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  SECTION 3 — ELEMENTAL SKILLS                                    ║
+// ║  Each element has its own sub-section.                           ║
+// ║  All skill functions receive ball (b).                           ║
+// ║  They are IDENTICAL for player and bot — only getAimVec()        ║
+// ║  differs (player uses camera yaw, bot aims at target).           ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+// Shared aim helpers
+function getAimVec(b) {
+  if (b.isPlayerControlled) {
+    const dx = -Math.sin(yaw) * Math.cos(pitch), dy = -Math.sin(pitch), dz = -Math.cos(yaw) * Math.cos(pitch);
+    const len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+    return new THREE.Vector3(dx / len, dy / len, dz / len);
+  }
+  if (!b.target) return new THREE.Vector3(1, 0, 0);
+  return new THREE.Vector3().subVectors(b.target.mesh.position, b.mesh.position).normalize();
+}
+function getFlatAim(b) { const v = getAimVec(b); v.y = 0; return v.normalize(); }
+
+// ── SECTION 3A — FIRE ──────────────────────────────────────────────
+// A: Fireball — projectile forward
+// B: Flamethrower — 25 rapid fireballs
+function skillFireball(b) {
+  if (!spendMp(b, 4)) return;
+  const a = getAimVec(b);
+  spawnProj(b, a.x * 0.55, a.y * 0.55, a.z * 0.55, 70, 5, 0.65);
+}
+function skillFlamethrower(b) { skillBurst(b, 2, 10); }
+
+// ── SECTION 3B — WATER ─────────────────────────────────────────────
+// A: Waterball — projectile forward (slightly slower, longer range)
+// B: Water Gun — 25 rapid water shots
+function skillWaterball(b) {
+  if (!spendMp(b, 4)) return;
+  const a = getAimVec(b);
+  spawnProj(b, a.x * 0.45, a.y * 0.45, a.z * 0.45, 90, 5, 0.75);
+}
+function skillWaterGun(b) { skillBurst(b, 2, 10); }
+
+// ── SECTION 3C — LIGHTNING ─────────────────────────────────────────
+// A: Lightning Shock — instant arc to nearest enemy within 10u
+// B: Lightning Dash — elemental dash along aim direction
+function skillLightningShock(b) {
+  if (!spendMp(b, 4)) return;
+  const range = 10;
+  let nearest = null, nearDist = 9999;
+  getEnemiesOf(b).forEach(t => {
+    const d = b.mesh.position.distanceTo(t.mesh.position);
+    if (d < nearDist && d < range) { nearDist = d; nearest = t; }
+  });
+  if (!nearest) return;
+  const tp = nearest.mesh.position;
+  const pts = [b.mesh.position.clone()];
+  for (let i = 1; i < 10; i++) pts.push(new THREE.Vector3(
+    b.mesh.position.x + (tp.x - b.mesh.position.x) * (i / 10) + (Math.random() - 0.5) * 1.5,
+    b.mesh.position.y + (tp.y - b.mesh.position.y) * (i / 10) + Math.random() * 1.5,
+    b.mesh.position.z + (tp.z - b.mesh.position.z) * (i / 10) + (Math.random() - 0.5) * 1.5
+  ));
+  pts.push(tp.clone());
+  const arc = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xffff44, linewidth: 3 }));
+  addTemp(arc); setTimeout(() => removeTemp(arc), 600);
+  dealDmg(b, nearest, 5); applyKb(nearest, b.mesh.position.x, b.mesh.position.z, 3);
+}
+function skillLightningDash(b) { skillDash(b, 'lightning'); }
+
+// ── SECTION 3D — EARTH ─────────────────────────────────────────────
+// A: Earth Pillar — erupts at pointer, launches enemies and objects
+// B: Dig Hide — ball goes underground, untouchable, 6s duration
+function skillEarthPillar(b) {
+  if (!spendMp(b, 10)) return;
+  const flat = getFlatAim(b);
+  const tpx = b.mesh.position.x + flat.x * 10, tpz = b.mesh.position.z + flat.z * 10;
+  const ring = new THREE.Mesh(new THREE.RingGeometry(2, 2.8, 24), new THREE.MeshBasicMaterial({ color: 0xcc7722, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
+  ring.rotation.x = -Math.PI / 2; ring.position.set(tpx, 0.05, tpz); addTemp(ring); setTimeout(() => removeTemp(ring), 220);
+  for (let i = 0; i < 12; i++) { const a = Math.random() * Math.PI * 2, sp = 0.14 + Math.random() * 0.28; spawnPart(new THREE.Vector3(tpx, 0.3, tpz), Math.cos(a) * sp, 0.28 + Math.random() * 0.36, Math.sin(a) * sp, '#7a4010', 38); }
+  const pillar = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.6, 14, 8), new THREE.MeshStandardMaterial({ color: '#8b4513', flatShading: true }));
+  pillar.position.set(tpx, -10, tpz); pillar.userData = { isEnv: true, envType: 'pillar', radius: 1.6, height: 14, sinking: false, vel: new THREE.Vector3() };
+  addTemp(pillar); destructibles.push(pillar);
+  const HIT_R = 3.2;
+  getEnemiesOf(b, true).forEach(t => {
+    if (new THREE.Vector3(tpx, 0, tpz).distanceTo(new THREE.Vector3(t.mesh.position.x, 0, t.mesh.position.z)) < HIT_R && t.mesh.position.y < GY + 12) {
+      if (t.underground) {
+        t.underground = false; t.undergroundTimer = 0; t.undergroundSlowed = false;
+        t.mesh.material.opacity = 1; t.mesh.material.transparent = false; t.mesh.material.needsUpdate = true;
+        t.mesh.position.y = GY;
+      }
+      // If target is in cyclone, pillar wins — set flag so cyclone lets them fly up
+      if (t.cyclone) { t.cyclonePillarHit = true; }
+      dealDmg(b, t, 10); t.vY = 1.6; applyKb(t, tpx, tpz, 1.5);
+    }
+  });
+  destructibles.forEach(d => {
+    if (d.userData.sinking || d.userData.envType === 'pillar') return;
+    const dh = new THREE.Vector3(d.position.x - tpx, 0, d.position.z - tpz);
+    if (dh.length() < HIT_R + 0.5) {
+      if (d.userData.envType === 'boulder' && d.userData.vel) {
+        const dir = dh.length() < 0.01 ? new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize() : dh.normalize();
+        d.userData.vel.x = dir.x * 1.8; d.userData.vel.z = dir.z * 1.8; d.userData.airborne = true; d.userData.airVY = 1.4; d.userData.earthHitBy = b;
+      } else if (d.userData.envType === 'tree') {
+        const dir = dh.length() < 0.01 ? new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize() : dh.normalize();
+        d.userData.vel = d.userData.vel || new THREE.Vector3(); d.userData.vel.x = dir.x * 1.4; d.userData.vel.z = dir.z * 1.4; d.userData.airborne = true; d.userData.airVY = 1.2; d.userData.earthHitBy = b; d.userData.flying = true;
+      }
+    }
+  });
+  let t = 0; const rise = setInterval(() => { pillar.position.y += 1.2; if (++t > 10) { clearInterval(rise); setTimeout(() => { let s = 0; const sink = setInterval(() => { pillar.position.y -= 1; if (++s > 11) { clearInterval(sink); const pi = destructibles.indexOf(pillar); if (pi >= 0) destructibles.splice(pi, 1); removeTemp(pillar); } }, 60); }, 1200); } }, 30);
+}
+// B: Dig Hide — hides caster underground, 50% movement speed, MC 5
+//    Can be expelled by Earth Pillar (erupts underneath) and caught
+//    by Binding Vines (vines reach underground).
+//    Player joystick / bot AI still drive XZ movement at half speed.
+function skillDigHide(b) {
+  if (!spendMp(b, 5)) return;
+  if (b.underground) return;
+  if (b.mesh.position.y > GY + 1.5) { b.mp += 5; return; }
+  b.underground = true;
+  b.undergroundTimer = 360; // 6 seconds at 60fps
+  b.undergroundSlowed = true; // flag for 50% speed applied in animate loop
+  b.mesh.material.transparent = true; b.mesh.material.opacity = 0; b.mesh.material.needsUpdate = true;
+  b.mesh.position.y = -1.2; b.vY = 0;
+  if (b.floatingUI) b.floatingUI.style.display = 'none';
+}
+
+// ── SECTION 3E — WIND ──────────────────────────────────────────────
+// A: Wind Slash — travelling crescent blade
+//    Crescent is built in LOCAL space along the Z axis (tip at +Z).
+//    The group is then rotated via lookAt() to face the travel direction,
+//    so the convex tip ALWAYS leads — identical for player and bot.
+// B: Cyclone — 5s vortex: lifts caster, sucks + damages enemies, throws on end
+function skillWindSlash(b) {
+  if (!spendMp(b, 5)) return;
+  const aim = getAimVec(b);
+  const speed = 0.52;
+  const vx = aim.x * speed, vy = aim.y * speed, vz = aim.z * speed;
+
+  // travelDir: flat XZ direction the slash moves toward
+  const travelDir = new THREE.Vector3(aim.x, 0, aim.z).normalize();
+  if (travelDir.lengthSq() < 0.001) travelDir.set(0, 0, -1);
+
+  // Build crescent in LOCAL space:
+  //   X axis = width (left/right of the crescent)
+  //   Z axis = depth (convex tip points toward +Z, concave opens toward -Z)
+  // After building we rotate the group so +Z aligns with travelDir.
+  const g = new THREE.Group();
+  const R = 1.9;        // half-width
+  const BOW = 1.6;      // forward protrusion of the tip
+  const span = Math.PI * 0.82;
+  const arcPts = [], arcPtsInner = [];
+  for (let i = 0; i <= 28; i++) {
+    const a = -span / 2 + (i / 28) * span;
+    const lat = Math.sin(a) * R;          // X: left/right spread
+    const fwd = Math.cos(a) * BOW;        // Z: tip protrudes forward
+    const upOff = Math.sin(a * 0.5) * 0.18;
+    const pt = new THREE.Vector3(lat, upOff, fwd);
+    arcPts.push(pt);
+    arcPtsInner.push(pt.clone().multiplyScalar(0.74));
+  }
+  g.add(new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(arcPts), 28, 0.23, 6, false),
+    new THREE.MeshBasicMaterial({ color: 0x88ffff, transparent: true, opacity: 0.92 })
+  ));
+  g.add(new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(arcPtsInner), 28, 0.09, 5, false),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 })
+  ));
+
+  // Rotate group: tip (local +Z) faces the full 3D aim direction.
+  // lookAt() target = position + aimDir so it works in all directions.
+  let cx = b.mesh.position.x, cy = b.mesh.position.y + 0.6, cz = b.mesh.position.z;
+  g.position.set(cx, cy, cz);
+  g.lookAt(cx + aim.x, cy + aim.y, cz + aim.z);
+  addTemp(g);
+
+  let life = 26;
+  const move = () => {
+    if (life <= 0 || isGameOver) { removeTemp(g); return; }
+    cx += vx; cy += vy; cz += vz;
+    g.position.set(cx, cy, cz);
+    // Keep tip facing full 3D aim direction throughout travel
+    g.lookAt(cx + aim.x, cy + aim.y, cz + aim.z);
+    life--;
+    for (const t of getEnemiesOf(b)) {
+      if (Math.sqrt((t.mesh.position.x - cx) ** 2 + (t.mesh.position.y - cy) ** 2 + (t.mesh.position.z - cz) ** 2) < 2.6) {
+        dealDmg(b, t, 5); applyKb(t, cx, cz, 4); removeTemp(g); return;
+      }
+    }
+    for (const d of destructibles) {
+      if (!d.userData.sinking && Math.sqrt((d.position.x - cx) ** 2 + (d.position.z - cz) ** 2) < (d.userData.radius || 0) + 1.5) {
+        damageEnv(d, 5, cx, cz, 3);
+        if (d.userData.envType === 'boulder' && d.userData.vel) {
+          const dx2 = d.position.x - cx, dz2 = d.position.z - cz, len2 = Math.sqrt(dx2 * dx2 + dz2 * dz2) || 1;
+          d.userData.vel.x += (dx2 / len2) * 0.5; d.userData.vel.z += (dz2 / len2) * 0.5;
+          d.userData.airborne = true; d.userData.airVY = 0.22;
+        }
+        removeTemp(g); return;
+      }
+    }
+    requestAnimationFrame(move);
+  };
+  requestAnimationFrame(move);
+}
+function buildCycloneMesh() {
+  const g = new THREE.Group();
+  const turns = 4, total = turns * 20, h1 = [], h2 = [];
+  // Spiral starts narrow at bottom (y=0) and widens toward top (y=8)
+  // Bottom at y=0 in local space — when attached to caster at y=GY it touches ground
+  for (let i = 0; i <= total; i++) {
+    const t = i / total, a = t * Math.PI * 2 * turns;
+    const r = 0.15 + t * 3.2; // narrow base, wide top
+    h1.push(new THREE.Vector3(Math.cos(a) * r, t * 8, Math.sin(a) * r));
+    h2.push(new THREE.Vector3(Math.cos(a + Math.PI) * r * 0.88, t * 8, Math.sin(a + Math.PI) * r * 0.88));
+  }
+  g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(h1), new THREE.LineBasicMaterial({ color: 0xaaeeff, linewidth: 2 })));
+  g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(h2), new THREE.LineBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.7 })));
+  // Shell: narrow at bottom, wide at top — 8 units tall
+  const shell = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.4, 0.18, 8, 24, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0x99ddff, transparent: true, opacity: 0.18, side: THREE.DoubleSide })
+  );
+  shell.position.y = 4; g.add(shell);
+  // Ground ring at y=0 (touches the floor)
+  const gR = new THREE.Mesh(
+    new THREE.RingGeometry(0.05, 1.2, 24),
+    new THREE.MeshBasicMaterial({ color: 0xaaeeff, transparent: true, opacity: 0.6, side: THREE.DoubleSide })
+  );
+  gR.rotation.x = -Math.PI / 2; gR.position.y = 0.02; g.add(gR);
+  return g;
+}
+// B: Cyclone — summons a cyclone under caster, lifts them up.
+//    Sucks enemies/objects within 4 units, damages (AP 5/sec) and throws on end.
+//    MC 15. Activates in air too. Caster CAN move XZ during cyclone.
+//    If hit by Earth Pillar during cyclone: launches up (pillar wins).
+//    On landing after cyclone: bounces like a balloon (high bounce coeff).
+function skillCyclone(b) {
+  if (!spendMp(b, 15)) return;
+  if (b.cyclone) return;
+  b.cyclone = true;
+  b.cycloneTimer = 300; // 5 seconds at 60fps
+  b.cycloneBalloonLand = true; // flag: next landing gets balloon bounce
+  const cm = buildCycloneMesh();
+  cm.position.set(b.mesh.position.x, b.mesh.position.y - 8, b.mesh.position.z);
+  scene.add(cm); b.cycloneMesh = cm;
+  // No ground requirement — activates wherever the ball is
+  if (b.vY < 0.1) b.vY = 0.12; // gentle upward push if falling/grounded
+}
+function tickCyclone(b) {
+  if (!b.cyclone) return;
+  b.cycloneTimer--;
+
+  // ── Cyclone mesh follows caster with a small Y lag (spring delay) ──
+  // The mesh chases the caster's target Y using lerp so it trails behind.
+  // When mesh hits the ground it bounces the caster upward (cushion effect).
+  const targetY = GY + 8;
+  const meshTargetY = b.mesh.position.y - 8; // desired mesh Y (under ball)
+  if (!b.cycloneMeshVY) b.cycloneMeshVY = 0;
+  if (b.cycloneMesh) {
+    b.cycloneMesh.position.x = b.mesh.position.x;
+    b.cycloneMesh.position.z = b.mesh.position.z;
+    // Spring: mesh velocity pulls toward meshTargetY
+    const meshDiff = meshTargetY - b.cycloneMesh.position.y;
+    b.cycloneMeshVY += meshDiff * 0.18;   // spring strength
+    b.cycloneMeshVY *= 0.72;              // damping
+    b.cycloneMesh.position.y += b.cycloneMeshVY;
+    // Mesh hits ground → bounce caster up (cushion)
+    if (b.cycloneMesh.position.y < GY) {
+      b.cycloneMesh.position.y = GY;
+      b.cycloneMeshVY = Math.abs(b.cycloneMeshVY) * 0.5;
+      if (b.vY < 0) b.vY = Math.abs(b.vY) * 0.6; // spring caster upward
+    }
+    b.cycloneMesh.rotation.y += 0.22;
+  }
+
+  // ── Caster physics while cyclone active ──
+  if (b.cyclonePillarHit) {
+    // Pillar launched — full gravity arc, mesh lags behind naturally
+    b.vY -= BALL_DEF.gravity;
+    b.mesh.position.y += b.vY;
+    b.cycloneBalloonLand = true;
+    if (b.mesh.position.y <= targetY && b.vY < 0) {
+      b.mesh.position.y = targetY; b.vY = 0; b.cyclonePillarHit = false;
+    }
+  } else if (b.mesh.position.y < targetY - 0.1) {
+    // Below hover height — rise to targetY
+    b.mesh.position.y += 0.18; b.vY = 0;
+  } else if (b.mesh.position.y <= targetY + 0.1) {
+    // At hover height — hold
+    b.mesh.position.y = targetY; b.vY = 0;
+  } else {
+    // Above targetY (cast airborne) — fall with gravity back to targetY
+    b.vY -= BALL_DEF.gravity;
+    b.mesh.position.y += b.vY;
+    if (b.mesh.position.y <= targetY) { b.mesh.position.y = targetY; b.vY = 0; }
+  }
+  if (b.mesh.position.y < GY) { b.mesh.position.y = GY; b.vY = 0; b.cyclonePillarHit = false; }
+
+  // Suck range centered at mesh position (so it follows the cyclone, not the ground)
+  const base = new THREE.Vector3(b.mesh.position.x, 0, b.mesh.position.z); // flat XZ suck range
+  const SUCK_R   = 4.0;
+  const ORBIT_R  = 3.0;
+  const ORBIT_SPD = 0.45;
+  const PULL_STR  = 0.42;
+
+  // ── ENEMIES: suck in via direct position move, 1 HP per 5 frames ──
+  // Skip enemies who are themselves casting cyclone — two cyclones don't suck each other
+  if (!b.cycloneDmgTick) b.cycloneDmgTick = 0;
+  b.cycloneDmgTick++;
+  const doDmg = (b.cycloneDmgTick % 5 === 0);
+
+  getEnemiesOf(b).forEach(t => {
+    const h = new THREE.Vector3(t.mesh.position.x - base.x, 0, t.mesh.position.z - base.z);
+    const hLen = h.length();
+    const cycTop = b.mesh.position.y;       // top of cyclone = ball center
+    const cycBot = b.mesh.position.y - 8;   // bottom disc of cyclone
+    if (hLen >= SUCK_R || hLen < 0.01) return;
+    if (t.mesh.position.y > cycTop || t.mesh.position.y < cycBot) return;
+
+    // Cyclone-vs-cyclone: guard so each pair is handled ONCE per frame.
+    // Both tickCyclones run per frame; without this the opposing h vectors
+    // make the tangential forces cancel and produce no orbit.
+    // First ball to claim the pair runs the normal suck on BOTH balls.
+    if (t.cyclone) {
+      const pk = allBalls.indexOf(b) < allBalls.indexOf(t)
+        ? allBalls.indexOf(b) + '-' + allBalls.indexOf(t)
+        : allBalls.indexOf(t) + '-' + allBalls.indexOf(b);
+      if (_cycPairs.has(pk)) return;
+      _cycPairs.add(pk);
+      // Apply normal suck to t (pulled toward b)
+      const pullMult = hLen > ORBIT_R ? PULL_STR : PULL_STR * 0.4;
+      const inward = h.clone().normalize().multiplyScalar(-pullMult);
+      const tang = new THREE.Vector3(-h.z, 0, h.x).normalize().multiplyScalar(ORBIT_SPD);
+      t.mesh.position.x += inward.x + tang.x;
+      t.mesh.position.z += inward.z + tang.z;
+      t.slideVX = 0; t.slideVZ = 0;
+      // Also pull b toward t symmetrically (mutual attraction)
+      b.mesh.position.x -= inward.x; b.mesh.position.z -= inward.z;
+      b.mesh.position.x -= tang.x;  b.mesh.position.z -= tang.z;
+      b.slideVX = 0; b.slideVZ = 0;
+      return;
+    }
+
+    if (doDmg) {
+      const dmg = calcDmg(1, b.element, t.element);
+      t.hp -= dmg; b.stats.dmg += dmg;
+      showDmgAt(t.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), dmg, b.isAlly ? '#00ffff' : '#ff4444');
+      if (t.hp <= 0) { killBall(t, b); return; }
+    }
+
+    // Direct position move — bypasses slide friction so pull is consistent
+    const pullMult = hLen > ORBIT_R ? PULL_STR : PULL_STR * 0.4;
+    const inward = h.clone().normalize().multiplyScalar(-pullMult);
+    const tang = new THREE.Vector3(-h.z, 0, h.x).normalize().multiplyScalar(ORBIT_SPD);
+    t.mesh.position.x += inward.x + tang.x;
+    t.mesh.position.z += inward.z + tang.z;
+    // Clear slide so friction doesn't push them back out
+    t.slideVX = 0; t.slideVZ = 0;
+    // Enemies spiral up but never rise above the caster Y — only clamp if above ground
+    const maxEnemyY = b.mesh.position.y - 0.5;
+    if (t.mesh.position.y < Math.min(maxEnemyY, GY + 5)) t.vY = Math.max(t.vY, 0.06);
+    // Only clamp Y DOWN if enemy is actually above max — never push below GY
+    if (t.mesh.position.y > maxEnemyY) { t.mesh.position.y = maxEnemyY; t.vY = 0; }
+    if (t.mesh.position.y < GY) t.mesh.position.y = GY; // hard floor guard
+  });
+
+  // ── PROJECTILES: sucked in, absorbed at orbit radius ──
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    const p = projectiles[i];
+    if (p.userData.fromAlly === b.isAlly) continue;
+    const ph = new THREE.Vector3(p.position.x - base.x, 0, p.position.z - base.z);
+    const phLen = ph.length();
+    if (phLen >= SUCK_R) continue;
+    const pInward = ph.clone().normalize().multiplyScalar(-0.28);
+    const pTang = new THREE.Vector3(-ph.z, 0, ph.x).normalize().multiplyScalar(0.22);
+    p.userData.vx = p.userData.vx * 0.5 + pInward.x + pTang.x;
+    p.userData.vz = p.userData.vz * 0.5 + pInward.z + pTang.z;
+    p.userData.vy *= 0.4;
+    if (phLen < ORBIT_R) { scene.remove(p); projectiles.splice(i, 1); }
+  }
+
+  // ── MOVEABLE OBJECTS: sucked in, orbit, damaged (no knockback on boulders) ──
+  destructibles.forEach(d => {
+    if (d.userData.sinking || d.userData.envType === 'pillar') return;
+    const dh = new THREE.Vector3(d.position.x - base.x, 0, d.position.z - base.z);
+    const dhLen = dh.length();
+
+    // Trees: damage only, no movement
+    const cycTop = b.mesh.position.y;
+    const cycBot = b.mesh.position.y - 8;
+    if (d.userData.envType === 'tree') {
+      if (dhLen < SUCK_R + 1.0 && doDmg && d.position.y >= cycBot && d.position.y <= cycTop) damageEnv(d, 1, undefined, undefined, 0);
+      return;
+    }
+
+    if (dhLen >= SUCK_R) return;
+    if (d.position.y > cycTop || d.position.y < cycBot) return;
+    const isBush = d.userData.envType === 'bush';
+    const inward = dh.clone().normalize().multiplyScalar(isBush ? -0.30 : -0.18);
+    const tang = new THREE.Vector3(-dh.z, 0, dh.x).normalize().multiplyScalar(isBush ? 0.32 : 0.20);
+    d.position.x += inward.x + tang.x;
+    d.position.z += inward.z + tang.z;
+    d.rotation.y += isBush ? 0.28 : 0.16;
+    d.position.y = Math.min(GY + 4, d.position.y + 0.04);
+    // Damage every tick window — pass undefined fromX so boulders get NO velocity push
+    if (doDmg) {
+      if (d.userData.envType === 'boulder') {
+        // HP damage only, no knockback — cyclone holds boulder in place
+        d.userData.hp -= 1;
+        spawnHitSpark(d.position.clone(), 0xaaaaaa);
+        if (d.userData.hp <= 0) sinkEnv(d);
+      } else {
+        damageEnv(d, 1, undefined, undefined, 0);
+      }
+    }
+  });
+
+  // ── CYCLONE ENDS: fling outward ──
+  if (b.cycloneTimer <= 0) {
+    getEnemiesOf(b).forEach(t => {
+      const h = new THREE.Vector3(t.mesh.position.x - base.x, 0, t.mesh.position.z - base.z);
+      if (h.length() < SUCK_R + 0.5) {
+        const dir = h.length() < 0.1 ? new THREE.Vector3(Math.random()-0.5, 0, Math.random()-0.5).normalize() : h.normalize();
+        t.slideVX = dir.x * 2.5; t.slideVZ = dir.z * 2.5; t.vY = 0.5;
+        dealDmg(b, t, 12);
+      }
+    });
+    destructibles.forEach(d => {
+      if (d.userData.sinking || d.userData.envType === 'pillar' || d.userData.envType === 'tree') return;
+      const dh = new THREE.Vector3(d.position.x - base.x, 0, d.position.z - base.z);
+      if (dh.length() < SUCK_R + 0.5) {
+        const td = dh.length() < 0.1 ? new THREE.Vector3(Math.random()-0.5, 0, Math.random()-0.5).normalize() : dh.normalize();
+        if (d.userData.vel) { d.userData.vel.x = td.x * 0.8; d.userData.vel.z = td.z * 0.8; }
+        d.userData.airborne = true; d.userData.airVY = 0.2; d.position.y = GY;
+      }
+    });
+    b.cyclone = false; b.cyclonePillarHit = false; b.cycloneBalloonLand = true; b.vY = -0.05;
+    if (b.cycloneMesh) { scene.remove(b.cycloneMesh); b.cycloneMesh = null; }
+  }
+}
+
+// ── SECTION 3F — VERDANT ───────────────────────────────────────────
+// A: Binding Vines — traps enemies at target location, 50% slow (capped),
+//    AP 2/sec for 5s, MC 5. Affects underground balls too (vines reach down).
+//    Multiple casts don't stack the slow — 50% is always the floor.
+function skillBindingVines(b) {
+  if (!spendMp(b, 5)) return;
+  const flat = getFlatAim(b);
+  const vcx = b.mesh.position.x + flat.x * 8, vcz = b.mesh.position.z + flat.z * 8;
+  const center = new THREE.Vector3(vcx, 0, vcz);
+  // Visual
+  const vg = new THREE.Group();
+  const rm = new THREE.Mesh(new THREE.RingGeometry(2.5, 3, 20), new THREE.MeshBasicMaterial({ color: 0x22aa22, side: THREE.DoubleSide }));
+  rm.rotation.x = -Math.PI / 2; vg.add(rm);
+  for (let i = 0; i < 10; i++) {
+    const ang = (i / 10) * Math.PI * 2, r = 2.5 + Math.random() * 0.4, h = 2.5 + Math.random() * 2;
+    const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.14, h, 5), new THREE.MeshBasicMaterial({ color: 0x1a8a1a }));
+    stalk.position.set(Math.cos(ang) * r, h / 2, Math.sin(ang) * r);
+    stalk.rotation.z = Math.cos(ang) * 0.35; stalk.rotation.x = Math.sin(ang) * 0.35; vg.add(stalk);
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.22, 5, 5), new THREE.MeshBasicMaterial({ color: 0x33dd33 }));
+    leaf.position.set(Math.cos(ang) * r, h + 0.1, Math.sin(ang) * r); vg.add(leaf);
+  }
+  vg.position.copy(center); addTemp(vg);
+  const VINE_R = 3.2;
+  let ticks = 0;
+  const intv = setInterval(() => {
+    if (isGameOver || ticks >= 5) {
+      clearInterval(intv); removeTemp(vg);
+      // Only clear slowed if no other vine zone is affecting them
+      allBalls.forEach(t => { t.vineCount = Math.max(0, (t.vineCount || 0) - 1); if (t.vineCount <= 0) t.slowed = false; });
+      return;
+    }
+    // Affect enemies AND underground balls within radius
+    getEnemiesOf(b, true).forEach(t => {
+      const horiz = new THREE.Vector2(t.mesh.position.x - vcx, t.mesh.position.z - vcz);
+      if (horiz.length() < VINE_R) {
+        // 50% slow — capped, multiple casts don't slow further
+        t.slowed = true;
+        t.vineCount = (t.vineCount || 0) + (ticks === 0 ? 1 : 0);
+        dealDmg(b, t, 2);
+      }
+    });
+    ticks++;
+  }, 1000);
+}
+function skillHeal(b) {
+  if (!spendMp(b, 15)) return;
+  if (b.healMesh) { removeTemp(b.healMesh); b.healMesh = null; } if (b.healRing) { removeTemp(b.healRing); b.healRing = null; }
+  const pos = b.mesh.position;
+  const pillar = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 12, 20, 1, true), new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.22, side: THREE.DoubleSide })); pillar.position.set(pos.x, 6, pos.z); addTemp(pillar); b.healMesh = pillar;
+  const gR = new THREE.Mesh(new THREE.RingGeometry(1, 3.8, 28), new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.35, side: THREE.DoubleSide })); gR.rotation.x = -Math.PI / 2; gR.position.set(pos.x, 0.08, pos.z); addTemp(gR); b.healRing = gR;
+  for (let i = 0; i < 16; i++) { const a = Math.random() * Math.PI * 2, r = 0.4 + Math.random() * 1.8; spawnPart(new THREE.Vector3(pos.x + Math.cos(a) * r, 0.2, pos.z + Math.sin(a) * r), Math.cos(a) * 0.02, 0.06 + Math.random() * 0.06, Math.sin(a) * 0.02, '#00ff88', 55); }
+  let ticks = 0;
+  const intv = setInterval(() => {
+    if (isGameOver || ticks >= 5 || !b.healMesh) { clearInterval(intv); if (b.healMesh) { removeTemp(b.healMesh); b.healMesh = null; } if (b.healRing) { removeTemp(b.healRing); b.healRing = null; } return; }
+    b.hp = Math.min(b.maxHp, b.hp + 3); if (b.isPlayerControlled) updateBars();
+    getAlliesOf(b).forEach(t => { if (t.mesh.position.distanceTo(b.mesh.position) < 4) t.hp = Math.min(t.maxHp, t.hp + 3); });
+    for (let i = 0; i < 5; i++) { const a = Math.random() * Math.PI * 2, r = 0.3 + Math.random() * 1.5; spawnPart(new THREE.Vector3(b.mesh.position.x + Math.cos(a) * r, 0.2, b.mesh.position.z + Math.sin(a) * r), Math.cos(a) * 0.015, 0.07 + Math.random() * 0.05, Math.sin(a) * 0.015, '#00ffaa', 45); }
+    ticks++;
+  }, 1000);
+}
+
+// ── SECTION 3G — LIGHT ─────────────────────────────────────────────
+// A: Flash — full screen whiteout, blinds enemies, exposes hidden
+// B: Light Dash — elemental dash along aim direction
+// A: Flash — blinds ALL balls (except light element casters and the caster) for 3s.
+//    Screen overlay only shows when the PLAYER is among those blinded.
+//    MC 5. Caster is always immune. Light element balls are immune.
+function skillFlash(b) {
+  if (!spendMp(b, 5)) return;
+  let playerBlinded = false;
+  allBalls.forEach(t => {
+    if (t === b) return;                  // caster never blinded
+    if (t.element === 'light') return;    // light element immune
+    t.blinded = true; t.blindTimer = 180; // 3s at 60fps
+    if (t.isPlayerControlled) playerBlinded = true;
+    // Expose underground and invisible enemies
+    if (t.underground) {
+      t.underground = false; t.undergroundTimer = 0; t.undergroundSlowed = false;
+      t.mesh.material.opacity = 1; t.mesh.material.transparent = false; t.mesh.material.needsUpdate = true;
+      t.mesh.position.y = GY;
+    }
+    if (t.invisible) {
+      t.invisible = false; t.invisTimer = 0;
+      t.mesh.material.opacity = 1; t.mesh.material.transparent = false; t.mesh.material.needsUpdate = true;
+    }
+  });
+  // Only flash the screen overlay if the player was actually blinded
+  if (playerBlinded) {
+    const overlay = document.getElementById('flash-overlay');
+    overlay.style.transition = 'opacity 0.05s'; overlay.style.opacity = '1';
+    setTimeout(() => { overlay.style.transition = 'opacity 3s'; overlay.style.opacity = '0'; }, 80);
+  }
+}
+function skillLightDash(b) { skillDash(b, 'light'); }
+
+// ── SECTION 3H — SHADOW ────────────────────────────────────────────
+// A: Invisibility — ball becomes invisible for 10s
+// B: Shadow Beam — 25 rapid high-damage shadow shots
+function skillInvisibility(b) {
+  if (!spendMp(b, 5)) return;
+  if (b.invisible) return;
+  b.invisible = true; b.invisTimer = 600;
+  b.mesh.material.transparent = true; b.mesh.material.opacity = 0; b.mesh.material.needsUpdate = true;
+}
+function skillShadowBeam(b) { skillBurst(b, 10, 10); }
+
+// ── SECTION 3I — SHARED SKILL PRIMITIVES ───────────────────────────
+// Used by multiple elements — edit here to affect all users
+
+// Burst: rapid projectile spray (Flamethrower / Water Gun / Shadow Beam)
+function skillBurst(b, ap, mc) {
+  if (!spendMp(b, mc)) return;
+  let shots = 0;
+  const intv = setInterval(() => {
+    if (shots >= 25 || isGameOver) { clearInterval(intv); return; }
+    const aim = getAimVec(b);
+    const jit = 0.08, nx = aim.x + (Math.random() - 0.5) * jit, ny = aim.y + (Math.random() - 0.5) * jit * 0.5, nz = aim.z + (Math.random() - 0.5) * jit;
+    const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+    spawnProj(b, nx / len * 0.45, ny / len * 0.45, nz / len * 0.45, 45, ap, 0.65);
+    shots++;
+  }, 200);
+}
+
+// Skill Dash: elemental dashing attack (Lightning Dash / Light Dash)
+// Identical path for player and bot — bot uses getFlatAim, player uses joystick
+function skillDash(b, dashEl) {
+  if (!spendMp(b, 10)) return;
+  if (!b.dashReady) return;
+  let flat;
+  if (b.isPlayerControlled) {
+    if (moveVector.x || moveVector.z) {
+      const cosY = Math.cos(yaw), sinY = Math.sin(yaw), mx = moveVector.x, mz = moveVector.z;
+      const rx = mx * cosY + mz * sinY, rz = -mx * sinY + mz * cosY, len = Math.sqrt(rx * rx + rz * rz) || 1;
+      flat = new THREE.Vector3(rx / len, 0, rz / len);
+    } else {
+      flat = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+    }
+  } else {
+    flat = getFlatAim(b);
+  }
+  const DIST = BALL_DEF.skillDashDist;
+  const startPos = b.mesh.position.clone();
+  const endPos = startPos.clone().addScaledVector(flat, DIST);
+  // Trail visuals — lightning and light trails are handled per-frame in the animate loop
+  // so no pre-drawn trail is spawned here (pre-draw caused the trail to poke out in front)
+  // Hit detection along path
+  const HIT_R = 3.5;
+  const alreadyHit = new Set();
+  function checkDashHits(cx, cz) {
+    getEnemiesOf(b).forEach(t => {
+      if (alreadyHit.has(t)) return;
+      const dx = t.mesh.position.x - cx, dz = t.mesh.position.z - cz;
+      if (Math.sqrt(dx * dx + dz * dz) < HIT_R) { alreadyHit.add(t); dealDmg(b, t, 12); applyKb(t, cx, cz, 6); }
+    });
+    destructibles.forEach(d => { if (!d.userData.sinking && Math.hypot(d.position.x - cx, d.position.z - cz) < (d.userData.radius || 1) + HIT_R) damageEnv(d, 8, cx, cz, 5); });
+  }
+  // dashEl must be set BEFORE hit detection and movement so that
+  // tickPhysics collision tierOf() reads tier 3 on the same frame
+  b.dashReady = false;
+  b.dashEl = dashEl;
+  if (b.isPlayerControlled) {
+    isDashing = true; dashTime = 18; dashDirX = flat.x; dashDirZ = flat.z;
+    let frames = 0;
+    const dashHitInterval = setInterval(() => { if (++frames > 18 || !isDashing) { clearInterval(dashHitInterval); return; } checkDashHits(b.mesh.position.x, b.mesh.position.z); }, 16);
+    setTimeout(() => { b.dashReady = true; b.dashEl = null; }, 1000);
+  } else {
+    // Bot: same frame-by-frame skill dash as player — store state on ball
+    b._skillDashing = true;
+    b._dashDirX = flat.x; b._dashDirZ = flat.z; b._dashFrames = 18;
+    b._skillDashHitFn = checkDashHits;
+    setTimeout(() => { b.dashReady = true; b.dashEl = null; b._skillDashing = false; b._dashFrames = 0; }, 1000);
+  }
+}
+
+// Normal Dash — no element, no damage, coloured trail
+// Same for player and bot
+function ballNormalDash(b, dirX, dirZ) {
+  if (!b.dashReady) return;
+  const DIST = BALL_DEF.normalDashDist;
+  const startPos = b.mesh.position.clone();
+  for (let i = 0; i < 3; i++) { const tr = new THREE.Mesh(new THREE.SphereGeometry(0.55 - 0.1 * i), new THREE.MeshBasicMaterial({ color: new THREE.Color(COLORS[b.element]), transparent: true, opacity: 0.5 - 0.1 * i })); tr.position.set(startPos.x + dirX * i * 3.5, startPos.y, startPos.z + dirZ * i * 3.5); scene.add(tr); dashTrails.push(tr); }
+  const trW = new THREE.Mesh(new THREE.SphereGeometry(0.35), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 })); trW.position.set(startPos.x + dirX * 5, startPos.y, startPos.z + dirZ * 5); scene.add(trW); dashTrails.push(trW);
+  b.dashReady = false; b.dashEl = null;
+  if (b.isPlayerControlled) {
+    isDashing = true; dashTime = 14; dashDirX = dirX; dashDirZ = dirZ;
+    setTimeout(() => b.dashReady = true, 800);
+  } else {
+    // Bot: same frame-by-frame dash as player — store dash state on ball
+    b._normalDashing = true;
+    b._dashDirX = dirX; b._dashDirZ = dirZ; b._dashFrames = 14;
+    setTimeout(() => { b.dashReady = true; b._normalDashing = false; b._dashFrames = 0; }, 800);
+  }
+}
+
+// Skill dispatch maps — same table used by player buttons AND bot AI
+const SKILL_A = { fire: skillFireball, water: skillWaterball, lightning: skillLightningShock, earth: skillEarthPillar, wind: skillWindSlash, verdant: skillBindingVines, light: skillFlash, shadow: skillInvisibility };
+const SKILL_B = { fire: skillFlamethrower, water: skillWaterGun, lightning: skillLightningDash, earth: skillDigHide, wind: skillCyclone, verdant: skillHeal, light: skillLightDash, shadow: skillShadowBeam };
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  SECTION 4 — BOT BEHAVIOUR                                       ║
+// ║  AI-only movement, targeting, skill timing, retreat logic.       ║
+// ║  Bots call the exact same SKILL_A/SKILL_B as the player.         ║
+// ║  To add a new behaviour: add it here. Skills stay in Section 3.  ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+// Bot preferred engagement distances per element
+// These define the range at which bots stop approaching and start attacking.
+// Close-range skills (cyclone radius=4, vines range=8) need tight distances.
+const PREF_DIST = { fire: 8, water: 8, lightning: 6, earth: 10, wind: 4, verdant: 6, light: 8, shadow: 8 };
+// Bot B-skill priority (0–1 chance per attack tick)
+const B_PRIO    = { lightning: 0.65, wind: 0.65, verdant: 0.6, light: 0.6, fire: 0.4, water: 0.4, shadow: 0.55, earth: 0.35 };
+
+function tickBotAI(b) {
+  if (b.skillBCd > 0) b.skillBCd--;
+  if (b.jumpCd > 0) b.jumpCd--;
+  if (b.aiDashCd > 0) b.aiDashCd--;
+
+  // — Targeting: pick nearest enemy, re-roll occasionally —
+  if (!b.target || !allBalls.includes(b.target) || Math.random() < 0.003) {
+    const enemies = getEnemiesOf(b);
+    b.target = enemies.length > 0 ? enemies[Math.floor(Math.random() * enemies.length)] : null;
+  }
+  if (!b.target || b.blinded) return;
+
+  const tp   = b.target.mesh.position;
+  const dist = b.mesh.position.distanceTo(tp);
+  const spd  = (b.slowed || b.undergroundSlowed) ? diffConfig.speed * 0.5 : diffConfig.speed;
+  const pref = PREF_DIST[b.element] || 8;
+  const isHard = diffConfig.speed >= 0.14;
+
+  const hpRatio = b.hp / b.maxHp;
+  const mpRatio = b.mp / b.maxMp;
+
+  // ── HP/MP STATE LOGIC ──────────────────────────────────────────────
+  // HP full,  MP full  → approach and attack
+  // HP full,  MP low   → back away a little, regen MP, then re-engage
+  // HP low,   MP full  → keep attacking (aggressive even when hurt)
+  // HP low,   MP low   → retreat until both recover
+
+  const mpLow = mpRatio < 0.20;
+  const hpLow = hpRatio < 0.25;
+
+  if (hpLow && mpLow) {
+    // Both low — full retreat
+    const retreatDir = new THREE.Vector3().subVectors(b.mesh.position, tp).normalize();
+    b.mesh.position.addScaledVector(retreatDir, spd * 1.1);
+    // Verdant heals while retreating if it can
+    if (b.element === 'verdant' && b.skillBCd <= 0 && b.mp >= 15) { SKILL_B.verdant(b); b.skillBCd = 180; }
+    return;
+  }
+
+  if (!hpLow && mpLow) {
+    // MP only low — back away to a safe distance, don't attack, let MP regen
+    const safeDist = pref + 10;
+    if (dist < safeDist) {
+      const retreatDir = new THREE.Vector3().subVectors(b.mesh.position, tp).normalize();
+      b.mesh.position.addScaledVector(retreatDir, spd * 0.85);
+    }
+    // Don't attack while MP is recovering — just orbit at distance
+    return;
+  }
+
+  // HP low but MP fine — stay aggressive, keep attacking
+  // HP fine and MP fine — normal engage
+
+  // ── POSITIONING: move to effective skill range ─────────────────────
+  // Each element has a preferred engagement distance (PREF_DIST).
+  // Bot actively closes to within that range before attacking.
+  // Melee/cyclone/vines bots need to be close — they approach precisely.
+  const toTarget = new THREE.Vector3().subVectors(tp, b.mesh.position).normalize();
+
+  if (dist > pref + 1.0) {
+    // Approach — with slight orbit weave to avoid being predictable
+    b.orbitAngle += (isHard ? 0.018 : 0.008);
+    const perp    = new THREE.Vector3(-toTarget.z, 0, toTarget.x);
+    const blend   = isHard ? 0.35 : 0.08;
+    const moveDir = toTarget.clone().multiplyScalar(1 - blend)
+      .add(perp.multiplyScalar(Math.sin(b.orbitAngle) * blend)).normalize();
+    b.mesh.position.addScaledVector(moveDir, spd);
+    // Hard-mode dash burst when far away
+    if (isHard && b.aiDashCd <= 0 && dist > pref + 6 && Math.random() < 0.05 && b.dashReady) {
+      ballNormalDash(b, moveDir.x, moveDir.z); b.aiDashCd = 60;
+    }
+  } else if (dist < pref - 1.5) {
+    // Too close — back off
+    b.mesh.position.addScaledVector(
+      new THREE.Vector3().subVectors(b.mesh.position, tp).normalize(), spd * 0.85
+    );
+  }
+
+  // ── PROJECTILE DODGE ──────────────────────────────────────────────
+  if (diffConfig.dodge && b.jumpCd <= 0) {
+    for (const p of projectiles) {
+      if (p.userData.fromAlly !== b.isAlly && p.position.distanceTo(b.mesh.position) < 6 && b.vY === 0) {
+        b.vY = BALL_DEF.jumpVY * 0.9; b.jumpCd = 60; break;
+      }
+    }
+  }
+
+  // ── ATTACK: only fire when WITHIN effective range ──────────────────
+  // This ensures skills that need proximity (cyclone, vines, pillar) land.
+  // Skills are not wasted from out of range — bot waits until it's close.
+  const inRange = dist <= pref + 2.0;
+  if (inRange && Date.now() - b.lastAttack > diffConfig.atkRate) {
+    b.lastAttack = Date.now();
+    const bBase = B_PRIO[b.element] || 0.35;
+    if (b.skillBCd <= 0 && Math.random() < bBase) {
+      SKILL_B[b.element]?.(b); b.skillBCd = 180;
+    } else {
+      SKILL_A[b.element]?.(b);
+    }
+  }
+}
+
+// tickDummyAI — test ground only, no attacks, no movement (just receives hits)
+function tickDummyAI(b) {
+  if (b.mesh.children[0]) b.mesh.children[0].rotation.y += 0.04;
+}
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  SECTION 5 — ENVIRONMENT (Interactable Objects)                  ║
+// ║  Trees, boulders, bushes. Can be hit, moved, destroyed.          ║
+// ║  Each type has HP, velocity, airborne physics, destruction FX.   ║
+// ║  To add a new object type: add spawn + damageEnv + sinkEnv case. ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+function spawnEnv() {
+  // — Mountains (background ring, visual only) —
+  for (let i = 0; i < 18; i++) {
+    const mt = new THREE.Mesh(new THREE.ConeGeometry(35, 45, 4), new THREE.MeshStandardMaterial({ color: '#4b4b6b' }));
+    const a = (i / 18) * Math.PI * 2; mt.position.set(Math.cos(a) * 190, -5, Math.sin(a) * 190); mt.userData = { isEnv: true }; scene.add(mt);
+  }
+  // — Grass texture on ground plane —
+  const gc = document.createElement('canvas'); gc.width = 512; gc.height = 512; const gx2 = gc.getContext('2d');
+  gx2.fillStyle = '#1b3d0a'; gx2.fillRect(0, 0, 512, 512);
+  const bladeColors = ['#2d6e10', '#3a8a12', '#4aaa16', '#3d9010', '#52b81a'], tipColors = ['#6ad428', '#78e030', '#56c01a'];
+  for (let i = 0; i < 2200; i++) { const cx = Math.random() * 512, cy = Math.random() * 512, nb = 3 + Math.floor(Math.random() * 4), bc = bladeColors[Math.floor(Math.random() * bladeColors.length)]; for (let bi = 0; bi < nb; bi++) { const ang = Math.random() * Math.PI * 2, len = 4 + Math.random() * 10, tx = cx + Math.cos(ang) * len, ty = cy + Math.sin(ang) * len; const grad = gx2.createLinearGradient(cx, cy, tx, ty); grad.addColorStop(0, bc); grad.addColorStop(1, tipColors[Math.floor(Math.random() * tipColors.length)]); gx2.beginPath(); gx2.moveTo(cx, cy); gx2.lineTo(tx, ty); gx2.lineWidth = 1.5 + Math.random() * 1.5; gx2.strokeStyle = grad; gx2.lineCap = 'round'; gx2.stroke(); } }
+  const grassTex = new THREE.CanvasTexture(gc); grassTex.wrapS = THREE.RepeatWrapping; grassTex.wrapT = THREE.RepeatWrapping; grassTex.repeat.set(10, 10);
+  scene.traverse(obj => { if (obj.isMesh && obj.geometry?.type === 'PlaneGeometry') { obj.material = new THREE.MeshStandardMaterial({ map: grassTex, roughness: 1, metalness: 0 }); obj.material.needsUpdate = true; } });
+  // — Trees (HP 30, 3 breakable parts: top/mid/log) —
+  for (let i = 0; i < 30; i++) {
+    const tx = (Math.random() - 0.5) * 280, tz = (Math.random() - 0.5) * 280;
+    if (Math.sqrt(tx * tx + tz * tz) > AR - 8) continue;
+    const root = new THREE.Group(); root.position.set(tx, 0, tz); root.userData = { isEnv: true, envType: 'tree', hp: 30, radius: 1.2, height: 7, vel: new THREE.Vector3(), sinking: false, parts: [] };
+    const log = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.62, 3), new THREE.MeshStandardMaterial({ color: '#4a2c10' })); log.position.set(0, 1.5, 0); log.userData = { hp: 15, dead: false, envType: 'tree_log' };
+    const mid = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.45, 2.2), new THREE.MeshStandardMaterial({ color: '#5a3515' })); mid.position.set(0, 3.6, 0); mid.userData = { hp: 10, dead: false, envType: 'tree_mid' };
+    const top = new THREE.Mesh(new THREE.ConeGeometry(2.2, 4.5, 8), new THREE.MeshStandardMaterial({ color: '#1a4a10' })); top.position.set(0, 6.5, 0); top.userData = { hp: 5, dead: false, envType: 'tree_top' };
+    root.add(log, mid, top); scene.add(root); root.userData.parts = [top, mid, log]; destructibles.push(root);
+  }
+  // — Boulders (HP 30, roll with velocity, shatter on death) —
+  for (let i = 0; i < 15; i++) {
+    const bx = (Math.random() - 0.5) * 280, bz = (Math.random() - 0.5) * 280;
+    if (Math.sqrt(bx * bx + bz * bz) > AR - 8) continue;
+    const r = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5, 0), new THREE.MeshStandardMaterial({ color: '#666', flatShading: true }));
+    r.position.set(bx, 1, bz); r.userData = { hp: 30, vel: new THREE.Vector3(), radius: 1.6, height: 2.5, sinking: false, isEnv: true, envType: 'boulder' }; scene.add(r); destructibles.push(r);
+  }
+  // — Bushes (HP 5, no collision, decorative + flammable) —
+  for (let i = 0; i < 40; i++) {
+    const bx = (Math.random() - 0.5) * 280, bz = (Math.random() - 0.5) * 280;
+    if (Math.sqrt(bx * bx + bz * bz) > AR - 8) continue;
+    const b = new THREE.Mesh(new THREE.SphereGeometry(Math.random() * 0.5 + 0.6, 7, 7), new THREE.MeshStandardMaterial({ color: '#2d5a27' }));
+    b.position.set(bx, 0.5, bz); b.userData = { hp: 5, vel: new THREE.Vector3(), radius: 0, height: 1, sinking: false, isEnv: true, envType: 'bush' }; scene.add(b); destructibles.push(b);
+  }
+  // — Arena wall (visual boundary) —
+  const wall = new THREE.Mesh(new THREE.CylinderGeometry(AR, AR, 30, 64, 1, true), new THREE.MeshStandardMaterial({ color: '#334466', transparent: true, opacity: 0.18, side: THREE.BackSide })); wall.position.y = 5; wall.userData = { isEnv: true }; scene.add(wall);
+}
+
+// tickEnvPhysics — boulder roll, tree tumble, airborne objects
+function tickEnvPhysics() {
+  destructibles.forEach(d => {
+    if (d.userData.sinking) return;
+    if (d.userData.airborne) {
+      d.userData.airVY = (d.userData.airVY || 0) - 0.028;
+      d.position.y += d.userData.airVY;
+      if (d.userData.envType === 'tree' && d.userData.flying) {
+        d.rotation.z += (d.userData.vel?.x || 0) * 0.04; d.rotation.x += (d.userData.vel?.z || 0) * 0.04;
+      }
+      if (d.position.y <= GY) {
+        d.position.y = GY; const wasFlying = d.userData.flying; const fallVY = d.userData.airVY;
+        d.userData.airborne = false; d.userData.airVY = 0;
+        if (d.userData.envType === 'boulder' && Math.abs(fallVY) > 0.4) {
+          const fallDmg = Math.floor(Math.abs(fallVY) * 18); d.userData.hp -= fallDmg; spawnHitSpark(d.position.clone().add(new THREE.Vector3(0, 1, 0)), 0xaaaaaa); if (d.userData.hp <= 0) sinkEnv(d);
+        }
+        if (d.userData.envType === 'tree' && wasFlying) {
+          d.userData.flying = false;
+          const velX = d.userData.vel?.x || 0, velZ = d.userData.vel?.z || 0; const angle = Math.atan2(velX, velZ);
+          d.rotation.set(Math.PI / 2, angle, 0); d.position.y = GY + 0.6;
+          if (d.userData.earthHitBy) damageEnv(d, 15);
+          for (let i = 0; i < 8; i++) { const a = Math.random() * Math.PI * 2; spawnPart(d.position.clone().add(new THREE.Vector3(0, 0.2, 0)), Math.cos(a) * 0.12, 0.14, Math.sin(a) * 0.12, '#7a4a1a', 22); }
+        }
+      }
+    } else if (d.position.y > GY + 0.05) {
+      d.position.y = Math.max(GY, d.position.y - 0.12);
+    }
+    // Boulder rolling — capped velocity so it never slips uncontrollably far
+    if (d.userData.envType === 'boulder') {
+      d.userData.vel.x *= 0.80; d.userData.vel.z *= 0.80;
+      // Hard cap on speed — prevents the "slip to far front" issue
+      const bspd = Math.sqrt(d.userData.vel.x**2 + d.userData.vel.z**2);
+      if (bspd > 0.55) { const sc = 0.55 / bspd; d.userData.vel.x *= sc; d.userData.vel.z *= sc; }
+      if (Math.abs(d.userData.vel.x) < 0.002) d.userData.vel.x = 0;
+      if (Math.abs(d.userData.vel.z) < 0.002) d.userData.vel.z = 0;
+      d.position.x += d.userData.vel.x; d.position.z += d.userData.vel.z;
+      const bv = new THREE.Vector2(d.position.x, d.position.z);
+      if (bv.length() > AR - 2) { bv.normalize().multiplyScalar(AR - 2); d.position.x = bv.x; d.position.z = bv.y; d.userData.vel.x *= -0.5; d.userData.vel.z *= -0.5; }
+    }
+  });
+}
+
+// damageEnv — apply damage to an interactable object
+function damageEnv(d, dmg, fromX, fromZ, push) {
+  if (!d || d.userData.sinking) return;
+  const t = d.userData.envType;
+  if (t === 'bush') { d.userData.hp -= dmg; spawnHitSpark(d.position.clone(), 0x44ff44); if (d.userData.hp <= 0) { d.userData.sinking = true; const idx = destructibles.indexOf(d); if (idx >= 0) destructibles.splice(idx, 1); spawnBurst(d.position.clone(), '#44ff44', null); scene.remove(d); } }
+  else if (t === 'boulder') {
+    d.userData.hp -= dmg; spawnHitSpark(d.position.clone(), 0xaaaaaa);
+    if (fromX !== undefined) { const dx = d.position.x - fromX, dz = d.position.z - fromZ, len = Math.sqrt(dx * dx + dz * dz) || 1, f = push || 3; d.userData.vel.x += (dx / len) * f * 0.18; d.userData.vel.z += (dz / len) * f * 0.18; }
+    if (d.userData.hp <= 0) sinkEnv(d);
+  } else if (t === 'tree') {
+    const parts = d.userData.parts;
+    if (parts) { for (let i = 0; i < parts.length; i++) { const p = parts[i]; if (!p.userData.dead && p.userData.hp > 0) { p.userData.hp -= dmg; if (p.userData.hp <= 0) { p.userData.dead = true; scene.remove(p); const idx = destructibles.indexOf(p); if (idx >= 0) destructibles.splice(idx, 1); spawnBurst(p.getWorldPosition(new THREE.Vector3()), i === 0 ? '#22aa22' : '#7a4a1a', null); } break; } } if (parts.every(p => p.userData.dead)) { scene.remove(d); const di = destructibles.indexOf(d); if (di >= 0) destructibles.splice(di, 1); } }
+  } else { d.userData.hp -= dmg; if (d.userData.hp <= 0) sinkEnv(d); }
+}
+
+// sinkEnv — remove an object with appropriate death effect
+function sinkEnv(d) {
+  if (d.userData.sinking) return; d.userData.sinking = true;
+  const idx = destructibles.indexOf(d); if (idx >= 0) destructibles.splice(idx, 1);
+  if (d.userData.envType === 'boulder') {
+    const stoneColors = ['#888888', '#777777', '#999999', '#666666', '#aaaaaa', '#555555'];
+    for (let i = 0; i < 22; i++) { const a = Math.random() * Math.PI * 2, upA = Math.random() * Math.PI, sp = 0.22 + Math.random() * 0.45, col = stoneColors[Math.floor(Math.random() * stoneColors.length)]; const frag = new THREE.Mesh(new THREE.DodecahedronGeometry(0.15 + Math.random() * 0.3, 0), new THREE.MeshStandardMaterial({ color: col, flatShading: true })); frag.position.copy(d.position); frag.position.y = GY + 0.5; frag.userData = { vx: Math.sin(upA) * Math.cos(a) * sp, vy: 0.28 + Math.random() * 0.45, vz: Math.sin(upA) * Math.sin(a) * sp, life: 40 + Math.floor(Math.random() * 18), onDone: null }; scene.add(frag); particles.push(frag); }
+    for (let i = 0; i < 6; i++) { const a = Math.random() * Math.PI * 2, sp = 0.06 + Math.random() * 0.12; spawnPart(d.position.clone().add(new THREE.Vector3(0, 0.4, 0)), Math.cos(a) * sp, 0.1 + Math.random() * 0.15, Math.sin(a) * sp, '#cccccc', 18, 0.22); }
+    scene.remove(d);
+  } else { let t = 0; const s = setInterval(() => { d.position.y -= 0.18; if (++t > 25) { clearInterval(s); scene.remove(d); } }, 30); }
+}
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  SECTION 6 — BACKGROUND & WEATHER                                ║
+// ║  Non-interactable visual backdrop + lighting per weather state.  ║
+// ║  Weather changes: sky colour, fog, light colour, particles.      ║
+// ║  To add a new weather: add a branch in applyWeather().           ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+window.setWeather = function(type) {
+  currentWeather = type;
+  document.querySelectorAll('.weather-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('wbtn-' + type)?.classList.add('active');
+  if (scene) applyWeather(type);
+};
+
+function applyWeather(type) {
+  weatherParticles.forEach(p => scene.remove(p)); weatherParticles = [];
+  const toRm = []; scene.traverse(obj => { if (obj.userData.isWeatherEnv) toRm.push(obj); }); toRm.forEach(o => scene.remove(o));
+  scene.traverse(obj => { if (obj.isMesh && obj.geometry?.type === 'PlaneGeometry' && obj.material) { obj.material.emissive = new THREE.Color(0); obj.material.emissiveIntensity = 0; obj.material.needsUpdate = true; } });
+
+  if (type === 'fog') {
+    // — FOGGY: soft blue-grey sky, mild fog —
+    scene.background = new THREE.Color('#87CEEB'); scene.fog = new THREE.FogExp2('#b0c4d8', 0.008);
+    if (mainDirLight) { mainDirLight.color.set(0xffffff); mainDirLight.intensity = 1; }
+    if (mainAmbLight) { mainAmbLight.color.set(0xffffff); mainAmbLight.intensity = 0.45; }
+  } else if (type === 'sunny') {
+    // — SUNNY: clear sky, bright directional light, sun globe —
+    scene.background = new THREE.Color('#87CEEB'); scene.fog = null;
+    const sunG = new THREE.Mesh(new THREE.SphereGeometry(8, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffee44 })); sunG.position.set(80, 120, -80); sunG.userData = { isEnv: true, isWeatherEnv: true }; scene.add(sunG);
+    if (mainDirLight) { mainDirLight.color.set(0xfff5cc); mainDirLight.intensity = 2.2; }
+    if (mainAmbLight) { mainAmbLight.color.set(0xfff8e8); mainAmbLight.intensity = 0.7; }
+  } else if (type === 'rain') {
+    // — RAINY: dark sky, heavy fog, falling rain streaks —
+    scene.background = new THREE.Color('#3a4455'); scene.fog = new THREE.FogExp2('#4a5268', 0.014);
+    if (mainDirLight) { mainDirLight.color.set(0x8899bb); mainDirLight.intensity = 0.5; }
+    if (mainAmbLight) { mainAmbLight.color.set(0x667799); mainAmbLight.intensity = 0.25; }
+    for (let i = 0; i < 400; i++) { const drop = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.2, 4), new THREE.MeshBasicMaterial({ color: 0x99bbff, transparent: true, opacity: 0.55 })); drop.position.set((Math.random() - 0.5) * 300, Math.random() * 60, (Math.random() - 0.5) * 300); drop.userData = { vy: -2.2 + Math.random() * -0.5 }; scene.add(drop); weatherParticles.push(drop); }
+  } else if (type === 'snow') {
+    // — SNOWY: pale blue sky, soft fog, drifting snowflakes —
+    scene.background = new THREE.Color('#c8d8e8'); scene.fog = new THREE.FogExp2('#d0dce8', 0.009);
+    if (mainDirLight) { mainDirLight.color.set(0xccddff); mainDirLight.intensity = 0.7; }
+    if (mainAmbLight) { mainAmbLight.color.set(0xddeeff); mainAmbLight.intensity = 0.35; }
+    for (let i = 0; i < 350; i++) { const flake = new THREE.Mesh(new THREE.SphereGeometry(0.12 + Math.random() * 0.1, 5, 5), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 })); flake.position.set((Math.random() - 0.5) * 300, Math.random() * 60, (Math.random() - 0.5) * 300); flake.userData = { vy: -0.18 - Math.random() * 0.12, vx: (Math.random() - 0.5) * 0.04 }; scene.add(flake); weatherParticles.push(flake); }
+  } else if (type === 'night') {
+    // — NIGHT: dark sky, stars, moon, ground glow —
+    scene.background = new THREE.Color('#04122e'); scene.fog = new THREE.FogExp2('#061428', 0.004);
+    if (mainDirLight) { mainDirLight.color.set(0x88bbff); mainDirLight.intensity = 0.55; }
+    if (mainAmbLight) { mainAmbLight.color.set(0x0a2040); mainAmbLight.intensity = 0.35; }
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(8, 32, 32), new THREE.MeshBasicMaterial({ color: 0xe8f8ff })); moon.position.set(-100, 145, 80); moon.userData = { isEnv: true, isWeatherEnv: true }; scene.add(moon);
+    const starGeo = new THREE.BufferGeometry(); const sv = [];
+    for (let i = 0; i < 1600; i++) { const r = 420, th = Math.random() * Math.PI * 2, ph = Math.acos(Math.random() * 0.92); sv.push(r * Math.sin(ph) * Math.cos(th), Math.abs(r * Math.cos(ph)) + 30, r * Math.sin(ph) * Math.sin(th)); }
+    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(sv, 3)); scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 2.4, sizeAttenuation: true, transparent: true, opacity: 0.9 })));
+    scene.traverse(obj => { if (obj.isMesh && obj.geometry?.type === 'PlaneGeometry' && obj.material) { obj.material.emissive = new THREE.Color(0x003311); obj.material.emissiveIntensity = 0.55; obj.material.needsUpdate = true; } });
+  } else if (type === 'evening') {
+    // — EVENING: orange sky, low sun, warm light —
+    scene.background = new THREE.Color('#cc4400'); scene.fog = new THREE.FogExp2('#aa3300', 0.005);
+    if (mainDirLight) { mainDirLight.color.set(0xffcc44); mainDirLight.intensity = 2.5; }
+    if (mainAmbLight) { mainAmbLight.color.set(0xff8822); mainAmbLight.intensity = 0.55; }
+    const evSun = new THREE.Mesh(new THREE.SphereGeometry(10, 24, 24), new THREE.MeshBasicMaterial({ color: 0xffee00 })); evSun.position.set(0, 14, 195); evSun.userData = { isEnv: true, isWeatherEnv: true }; scene.add(evSun);
+  }
+}
+
+function updateWeatherParticles() {
+  for (const p of weatherParticles) {
+    p.position.y += p.userData.vy;
+    if (p.userData.vx) p.position.x += p.userData.vx;
+    if (p.position.y < -2) { p.position.y = 60; p.position.x = (Math.random() - 0.5) * 300; p.position.z = (Math.random() - 0.5) * 300; }
+  }
+}
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  SECTION 7 — GAME STATE & GLOBAL VARS                           ║
+// ╚══════════════════════════════════════════════════════════════════╝
+let scene, camera, renderer;
+let yaw = 0, pitch = 0, moveVector = { x: 0, z: 0 }, sensitivity = 0.008;
+let moveTouchId = null, lookTouchId = null, lastLookX = 0, lastLookY = 0;
+let isGameOver = false, isDying = false;
+let diffConfig = { speed: 0.09, atkRate: 2800, dodge: false };
+const screenHistory = ['screen-home'];
+const projectiles = [], dashTrails = [], destructibles = [], tempMeshes = [], particles = [];
+let allBalls = [], playerBall = null, deadBalls = [];
+const rosterMap = new Map();
+let selectedEnemyEl = null;
+let weatherParticles = [], currentWeather = 'fog';
+let mainDirLight, mainAmbLight;
+const GY = 1, AR = 185;
+const BOT_NAMES = ['Suman 🙂','Sachin 🙃','Ronal 😎','Noobda 🤪','Anu 😘','Raven 😝','Carl 😊','The GOAT 🐐','Aston 🥴','Emerald 😁','Celina 😑'];
+let botNameIdx = 0, shuffledNames = [];
+function resetNamePool() { shuffledNames = [...BOT_NAMES].sort(() => Math.random() - 0.5); botNameIdx = 0; }
+function getNextName() { return shuffledNames[botNameIdx++ % shuffledNames.length]; }
+let isDashing = false, dashTime = 0, dashDirX = 0, dashDirZ = 0;
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  SECTION 8 — BALL FACTORY & UI                                   ║
+// ╚══════════════════════════════════════════════════════════════════╝
+function createBall(element, isAlly, isPlayerControlled, spawnIndex, spawnTotal) {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_DEF.radius), new THREE.MeshStandardMaterial({ color: new THREE.Color(COLORS[element]) }));
+  if (isPlayerControlled) { mesh.position.set(0, GY, -50); }
+  else if (isAlly) { const offset = (spawnIndex - (Math.max(1, spawnTotal) - 1) / 2) * 5; mesh.position.set(offset, GY, -45); }
+  else { const offset = (spawnIndex - (Math.max(1, spawnTotal) - 1) / 2) * 5; mesh.position.set(offset, GY, 50); }
+  scene.add(mesh);
+  const floatingUI = isPlayerControlled ? null : makeFloatingUI(isAlly);
+  const name = getNextName();
+  return { name, element, isAlly, isPlayerControlled, mesh, floatingUI, hp: BALL_DEF.maxHp, maxHp: BALL_DEF.maxHp, mp: BALL_DEF.maxMp, maxMp: BALL_DEF.maxMp, vY: 0, kbx: 0, kbz: 0, slideVX: 0, slideVZ: 0, lastGroundY: GY, invisible: false, invisTimer: 0, underground: false, undergroundTimer: 0, cyclone: false, cycloneTimer: 0, cycloneMesh: null, healMesh: null, healRing: null, blinded: false, blindTimer: 0, slowed: false, dashReady: true, dashEl: null, target: null, lastAttack: 0, orbitAngle: Math.random() * Math.PI * 2, skillBCd: 0, jumpCd: 0, aiDashCd: 0, stats: { dmg: 0, kills: 0, assists: 0 }, damagers: new Set() };
+}
+
+function createDummy() {
+  const elements = Object.keys(COLORS), el = elements[Math.floor(Math.random() * elements.length)];
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_DEF.radius), new THREE.MeshStandardMaterial({ color: new THREE.Color(COLORS[el]) }));
+  mesh.position.set((Math.random() - 0.5) * 20, GY, -10 + Math.random() * 30); scene.add(mesh);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.12, 8, 20), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 })); ring.position.set(0, 2.2, 0); mesh.add(ring);
+  const floatingUI = makeFloatingUI(false);
+  const dummy = { name: 'DUMMY', element: el, isAlly: false, isPlayerControlled: false, mesh, floatingUI, hp: BALL_DEF.maxHp, maxHp: BALL_DEF.maxHp, mp: BALL_DEF.maxMp, maxMp: BALL_DEF.maxMp, vY: 0, kbx: 0, kbz: 0, lastGroundY: GY, invisible: false, invisTimer: 0, underground: false, undergroundTimer: 0, cyclone: false, cycloneTimer: 0, cycloneMesh: null, healMesh: null, healRing: null, blinded: false, blindTimer: 0, slowed: false, dashReady: false, dashEl: null, target: null, lastAttack: 0, orbitAngle: 0, skillBCd: 0, jumpCd: 0, aiDashCd: 0, stats: { dmg: 0, kills: 0, assists: 0 }, damagers: new Set(), isDummy: true };
+  allBalls.push(dummy); return dummy;
+}
+
+function makeFloatingUI(isAlly) {
+  const wrap = document.createElement('div'); wrap.style.cssText = 'position:absolute;display:flex;flex-direction:column;align-items:center;pointer-events:none;transform:translate(-50%,-100%);z-index:50;';
+  const hpBg = document.createElement('div'); hpBg.style.cssText = 'width:50px;height:6px;background:#222;border:1px solid #fff;border-radius:5px;overflow:hidden;margin-bottom:2px;';
+  const hpF = document.createElement('div'); hpF.style.cssText = 'height:100%;width:100%;background:' + (isAlly ? '#22c55e' : '#ef4444') + ';'; hpBg.appendChild(hpF);
+  const mpBg = document.createElement('div'); mpBg.style.cssText = 'width:40px;height:4px;background:#222;border:1px solid #fff;border-radius:5px;overflow:hidden;';
+  const mpF = document.createElement('div'); mpF.style.cssText = 'height:100%;width:100%;background:' + (isAlly ? '#3b82f6' : '#a855f7') + ';'; mpBg.appendChild(mpF);
+  wrap.appendChild(hpBg); wrap.appendChild(mpBg); wrap._hpF = hpF; wrap._mpF = mpF;
+  document.getElementById('floating-ui-container').appendChild(wrap); return wrap;
+}
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  SECTION 9 — SHARED HELPERS & VISUAL FX                         ║
+// ╚══════════════════════════════════════════════════════════════════╝
+function spendMp(b, cost) { if (window.gameMode === 'test' && b.isPlayerControlled) { if (b.isPlayerControlled) updateBars(); return true; } if (b.mp < cost) return false; b.mp -= cost; if (b.isPlayerControlled) updateBars(); return true; }
+function getEnemiesOf(b, includeUnderground) { return allBalls.filter(t => t !== b && t.isAlly !== b.isAlly && (includeUnderground || !t.underground) && !t.invisible); }
+function getAlliesOf(b) { return allBalls.filter(t => t !== b && t.isAlly === b.isAlly); }
+function addTemp(m) { scene.add(m); tempMeshes.push(m); }
+function removeTemp(m) { scene.remove(m); const i = tempMeshes.indexOf(m); if (i >= 0) tempMeshes.splice(i, 1); }
+function showDmgAt(wp, dmg, color) { const p = wp.clone(); p.project(camera); if (p.z > 1) return; const el = document.createElement('div'); el.className = 'dmg-num'; el.style.left = ((p.x * 0.5 + 0.5) * window.innerWidth) + 'px'; el.style.top = ((-(p.y * 0.5 - 0.5)) * window.innerHeight) + 'px'; el.style.color = color || '#fff'; el.innerText = Math.ceil(dmg); document.getElementById('damage-numbers').appendChild(el); setTimeout(() => el.parentNode?.removeChild(el), 1000); }
+function spawnPart(pos, vx, vy, vz, color, life, size) { const m = new THREE.Mesh(new THREE.SphereGeometry(size || 0.15, 5, 5), new THREE.MeshBasicMaterial({ color: new THREE.Color(color), transparent: true, opacity: 1 })); m.position.copy(pos); m.userData = { vx, vy, vz, life, onDone: null }; scene.add(m); particles.push(m); }
+function spawnBurst(pos, color, onDone) { for (let i = 0; i < 28; i++) { const sz = 0.18 + Math.random() * 0.28, m = new THREE.Mesh(new THREE.SphereGeometry(sz, 6, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(color), transparent: true, opacity: 1 })); m.position.copy(pos); const ang = Math.random() * Math.PI * 2, up = Math.random() * Math.PI, sp = 0.18 + Math.random() * 0.5; m.userData = { vx: Math.sin(up) * Math.cos(ang) * sp, vy: Math.cos(up) * sp * 0.6 + 0.15, vz: Math.sin(up) * Math.sin(ang) * sp, life: 55, onDone: i === 0 ? onDone : null }; scene.add(m); particles.push(m); } const ring = new THREE.Mesh(new THREE.RingGeometry(0.1, 0.6, 24), new THREE.MeshBasicMaterial({ color: new THREE.Color(color), transparent: true, opacity: 0.85, side: THREE.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.copy(pos); ring.position.y = GY + 0.05; ring.userData = { vx: 0, vy: 0, vz: 0, life: 30, onDone: null, isRing: true, ringScale: 1 }; scene.add(ring); particles.push(ring); }
+function spawnHitSpark(pos, color) { for (let i = 0; i < 5; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.1, 4, 4), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 1 })); m.position.copy(pos); m.userData = { vx: (Math.random() - 0.5) * 0.25, vy: Math.random() * 0.22 + 0.05, vz: (Math.random() - 0.5) * 0.25, life: 22, onDone: null }; scene.add(m); particles.push(m); } }
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  SECTION 10 — NAVIGATION, ROSTER, SCOREBOARD, BARS              ║
+// ╚══════════════════════════════════════════════════════════════════╝
+const settingsMenu = document.getElementById('settings-menu'), gameUI = document.getElementById('game-ui');
+document.getElementById('sens-slider').oninput = e => sensitivity = parseFloat(e.target.value);
+window.showOverlay = id => document.getElementById(id).classList.add('open');
+window.hideOverlay = id => document.getElementById(id).classList.remove('open');
+window.toggleSettings = () => { if (isGameOver) return; const o = settingsMenu.classList.toggle('open'); if (o) gameUI.classList.remove('active'); else if (screenHistory[screenHistory.length - 1] === 'game-ui') gameUI.classList.add('active'); };
+window.settingsBack = () => { settingsMenu.classList.remove('open'); if (screenHistory[screenHistory.length - 1] === 'game-ui') gameUI.classList.add('active'); doBack(); };
+window.navTo = id => { document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById('end-screen').classList.add('hidden'); gameUI.classList.add('hidden'); gameUI.classList.remove('active'); if (id === 'game-ui') { gameUI.classList.remove('hidden'); gameUI.classList.add('active'); } else document.getElementById(id)?.classList.remove('hidden'); if (screenHistory[screenHistory.length - 1] !== id) screenHistory.push(id); };
+window.handleBack = () => { if (document.getElementById('abilities-panel').classList.contains('open')) { hideOverlay('abilities-panel'); return; } if (settingsMenu.classList.contains('open')) { settingsMenu.classList.remove('open'); if (screenHistory[screenHistory.length - 1] === 'game-ui') gameUI.classList.add('active'); return; } doBack(); };
+function doBack() { if (screenHistory.length <= 1) return; screenHistory.pop(); while (screenHistory.length > 1 && ['game-ui', 'end-screen'].includes(screenHistory[screenHistory.length - 1])) screenHistory.pop(); const prev = screenHistory[screenHistory.length - 1]; document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById('end-screen').classList.add('hidden'); gameUI.classList.add('hidden'); gameUI.classList.remove('active'); resetGame(); document.getElementById(prev)?.classList.remove('hidden'); }
+window.restartGame = () => { document.getElementById('end-screen').classList.add('hidden'); resetGame(); startGame(); };
+window.goBackFromEnd = () => { document.getElementById('end-screen').classList.add('hidden'); resetGame(); while (screenHistory.length > 1 && ['game-ui', 'end-screen'].includes(screenHistory[screenHistory.length - 1])) screenHistory.pop(); navTo(window.gameMode === 'test' ? 'screen-element' : 'screen-difficulty'); };
+window.setDifficulty = level => { if (level === 'easy') diffConfig = { speed: 0.055, atkRate: 3500, dodge: false }; else if (level === 'normal') diffConfig = { speed: 0.09, atkRate: 2400, dodge: true }; else diffConfig = { speed: 0.16, atkRate: 1400, dodge: true }; startGame(); };
+function parseModeTeams(m) { return ({ test: { a: 0, e: 0 }, '1v1': { a: 0, e: 1 }, '1v2': { a: 0, e: 2 }, '1v3': { a: 0, e: 3 }, '1v4': { a: 0, e: 4 }, '1v5': { a: 0, e: 5 }, '1v10': { a: 0, e: 10 }, '2v2': { a: 1, e: 2 }, '4v4': { a: 3, e: 4 } })[m] || { a: 0, e: 1 }; }
+let selEnemyEl = null;
+function getEnemyEl() { return selEnemyEl || (Object.keys(COLORS)[Math.floor(Math.random() * 8)]); }
+function setupEnemyElPicker() { const c = document.getElementById('enemy-el-btns'); c.innerHTML = ''; selEnemyEl = null; const rand = document.createElement('button'); rand.className = 'el-pick-btn selected'; rand.style.background = 'linear-gradient(135deg,#ff4500,#00bfff,#ffff00)'; rand.innerText = '🎲 RANDOM'; rand.onclick = () => { selEnemyEl = null; document.querySelectorAll('.el-pick-btn').forEach(b => b.classList.remove('selected')); rand.classList.add('selected'); }; c.appendChild(rand); Object.keys(COLORS).forEach(el => { const btn = document.createElement('button'); btn.className = 'el-pick-btn'; btn.style.background = COLORS[el]; btn.innerText = EL_EMOJI[el] + ' ' + el.toUpperCase(); if (el === 'shadow') btn.style.color = '#ddd'; btn.onclick = () => { selEnemyEl = el; document.querySelectorAll('.el-pick-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); }; c.appendChild(btn); }); }
+window.startModeFlow = mode => { window.gameMode = mode; setupEnemyElPicker(); navTo('screen-enemy-element'); };
+
+// Player control bindings
+window.playerCastA = () => { if (isGameOver || isDying || !playerBall) return; SKILL_A[playerBall.element]?.(playerBall); };
+window.playerCastB = () => { if (isGameOver || isDying || !playerBall) return; SKILL_B[playerBall.element]?.(playerBall); };
+window.playerJump = () => {
+  if (!playerBall) return;
+  if (playerBall.underground) { playerBall.underground = false; playerBall.undergroundTimer = 0; playerBall.mesh.material.opacity = 1; playerBall.mesh.material.transparent = false; playerBall.mesh.material.needsUpdate = true; playerBall.mesh.position.y = GY; return; }
+  if (playerBall.mesh.position.y <= GY + 0.05 && !playerBall.cyclone) playerBall.vY = BALL_DEF.jumpVY;
+};
+window.playerNormalDash = () => {
+  if (!playerBall || !playerBall.dashReady || isGameOver || isDying) return;
+  let dx = -Math.sin(yaw), dz = -Math.cos(yaw);
+  if (moveVector.x || moveVector.z) { const cosY = Math.cos(yaw), sinY = Math.sin(yaw), mx = moveVector.x, mz = moveVector.z, rx = mx * cosY + mz * sinY, rz = -mx * sinY + mz * cosY, len = Math.sqrt(rx * rx + rz * rz) || 1; dx = rx / len; dz = rz / len; }
+  ballNormalDash(playerBall, dx, dz);
+};
+
+// Element pick buttons
+const elBtnC = document.getElementById('el-btns');
+Object.keys(COLORS).forEach(el => { const b = document.createElement('button'); b.style.background = COLORS[el]; b.innerText = EL_EMOJI[el] + ' ' + el.toUpperCase(); if (el === 'shadow') b.style.color = '#ddd'; b.onclick = () => { window.playerElement = el; if (window.gameMode === 'test') startGame(); else navTo('screen-difficulty'); }; elBtnC.appendChild(b); });
+
+function updateBars() { if (!playerBall) return; document.getElementById('hp-fill').style.width = Math.max(0, playerBall.hp / playerBall.maxHp * 100) + '%'; document.getElementById('hp-val').innerText = Math.max(0, Math.floor(playerBall.hp)); document.getElementById('mc-fill').style.width = (playerBall.mp / playerBall.maxMp * 100) + '%'; document.getElementById('mc-val').innerText = Math.floor(playerBall.mp); }
+function updateSkillBtns() { if (!playerBall) return; const l = SKILL_LABELS[playerBall.element] || { a: 'A', b: 'B' }; document.getElementById('btn-a').innerText = l.a; document.getElementById('btn-b').innerText = l.b; document.getElementById('element-label').innerText = EL_EMOJI[playerBall.element] + ' ' + playerBall.element.toUpperCase(); }
+function buildRoster(balls) { const d = document.getElementById('enemy-roster'); d.innerHTML = ''; rosterMap.clear(); balls.filter(b => !b.isAlly).forEach(b => { const e = document.createElement('div'); e.className = 'roster-entry'; const lbl = document.createElement('span'); lbl.innerText = EL_EMOJI[b.element] + b.name; const hw = document.createElement('div'); hw.className = 'roster-hp'; const hf = document.createElement('div'); hf.className = 'roster-hp-fill'; hw.appendChild(hf); e.appendChild(lbl); e.appendChild(hw); e._hF = hf; d.appendChild(e); rosterMap.set(b, e); }); }
+function updateRoster() { rosterMap.forEach((e, b) => { if (!allBalls.includes(b)) { e.classList.add('dead'); e._hF.style.width = '0%'; } else e._hF.style.width = Math.max(0, b.hp / b.maxHp * 100) + '%'; }); }
+function buildScoreboard() {
+  const sb = document.getElementById('scoreboard'); sb.innerHTML = '';
+  const all = [...allBalls, ...deadBalls]; const pb = all.find(b => b.isPlayerControlled); const allies = all.filter(b => b.isAlly && !b.isPlayerControlled); const enemies = all.filter(b => !b.isAlly);
+  const t1 = document.createElement('div'); t1.className = 'score-team-title'; t1.style.background = 'rgba(59,130,246,.3)'; t1.innerText = '🔵 YOUR TEAM'; sb.appendChild(t1);
+  const h1 = document.createElement('div'); h1.className = 'score-row header'; h1.innerHTML = '<span>Name</span><span>DMG</span><span>K</span><span>A</span>'; sb.appendChild(h1);
+  if (pb) { const r = document.createElement('div'); r.className = 'score-row player-row'; r.innerHTML = '<span>' + EL_EMOJI[pb.element] + ' ' + pb.name + ' <span style="font-size:10px;color:#88aaff">(YOU)</span></span><span>' + Math.floor(pb.stats.dmg) + '</span><span>' + pb.stats.kills + '</span><span>' + pb.stats.assists + '</span>'; sb.appendChild(r); }
+  allies.forEach(b => { const r = document.createElement('div'); r.className = 'score-row' + (allBalls.includes(b) ? '' : ' dead-row'); r.innerHTML = '<span>' + EL_EMOJI[b.element] + ' ' + b.name + '</span><span>' + Math.floor(b.stats.dmg) + '</span><span>' + b.stats.kills + '</span><span>' + b.stats.assists + '</span>'; sb.appendChild(r); });
+  const t2 = document.createElement('div'); t2.className = 'score-team-title'; t2.style.background = 'rgba(239,68,68,.3)'; t2.innerText = '🔴 ENEMY TEAM'; sb.appendChild(t2);
+  const h2 = document.createElement('div'); h2.className = 'score-row header'; h2.innerHTML = '<span>Name</span><span>DMG</span><span>K</span><span>A</span>'; sb.appendChild(h2);
+  enemies.forEach(b => { const r = document.createElement('div'); r.className = 'score-row' + (allBalls.includes(b) ? '' : ' dead-row'); r.innerHTML = '<span>' + EL_EMOJI[b.element] + ' ' + b.name + '</span><span>' + Math.floor(b.stats.dmg) + '</span><span>' + b.stats.kills + '</span><span>' + b.stats.assists + '</span>'; sb.appendChild(r); });
+}
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  SECTION 11 — GAME INIT, RESET, START, SUMMONING                ║
+// ╚══════════════════════════════════════════════════════════════════╝
+function resetGame() {
+  for (let i = projectiles.length - 1; i >= 0; i--) { const p = projectiles[i]; while (p.children.length) p.remove(p.children[0]); scene.remove(p); } projectiles.length = 0;
+  for (let i = destructibles.length - 1; i >= 0; i--) scene.remove(destructibles[i]); destructibles.length = 0;
+  for (let i = dashTrails.length - 1; i >= 0; i--) scene.remove(dashTrails[i]); dashTrails.length = 0;
+  for (let i = tempMeshes.length - 1; i >= 0; i--) scene.remove(tempMeshes[i]); tempMeshes.length = 0;
+  for (let i = particles.length - 1; i >= 0; i--) scene.remove(particles[i]); particles.length = 0;
+  weatherParticles.forEach(p => scene.remove(p)); weatherParticles = [];
+  // Remove any lingering cyclone meshes so they don't persist across replays
+  allBalls.forEach(b => { if (b.cycloneMesh) { scene.remove(b.cycloneMesh); b.cycloneMesh = null; } });
+  allBalls.forEach(b => { scene.remove(b.mesh); if (b.floatingUI) b.floatingUI.remove(); }); allBalls = []; playerBall = null; deadBalls = []; resetNamePool();
+  const toRm = []; scene.traverse(obj => { if (obj.userData.isEnv) toRm.push(obj); }); toRm.forEach(o => scene.remove(o));
+  // Kill all lingering magic circles (summon animations left mid-game)
+  _activeCircles.forEach(grp => scene.remove(grp)); _activeCircles = [];
+  isGameOver = false; isDying = false; isDashing = false; dashTime = 0;
+  document.getElementById('enemy-roster').innerHTML = ''; document.getElementById('damage-numbers').innerHTML = ''; document.getElementById('floating-ui-container').innerHTML = '';
+  document.getElementById('flash-overlay').style.opacity = '0'; rosterMap.clear();
+  applyWeather(currentWeather);
+}
+
+function spawnMagicCircle(x, z, color, onDone) {
+  const grp = new THREE.Group(); grp.position.set(x, 0.08, z); grp.rotation.x = -Math.PI / 2;
+  const mkRing = (r1, r2, col, op) => { const m = new THREE.Mesh(new THREE.RingGeometry(r1, r2, 64), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op, side: THREE.DoubleSide, depthWrite: false })); return m; };
+  grp.add(mkRing(4.2, 5.0, color, 0.55)); grp.add(mkRing(2.8, 3.2, color, 0.80));
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(2.8, 64), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false })); grp.add(disc);
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; const pts = [new THREE.Vector3(Math.cos(a) * 0.4, Math.sin(a) * 0.4, 0), new THREE.Vector3(Math.cos(a) * 2.8, Math.sin(a) * 2.8, 0)]; const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.7 })); grp.add(line); }
+  const partCount = 16, partGeo = new THREE.CircleGeometry(0.12, 6), partMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 }), parts = [];
+  for (let i = 0; i < partCount; i++) { const p = new THREE.Mesh(partGeo, partMat.clone()); const a = (i / partCount) * Math.PI * 2; p.position.set(Math.cos(a) * 3.7, Math.sin(a) * 3.7, 0); grp.add(p); parts.push({ mesh: p, baseAngle: a }); }
+  scene.add(grp); _activeCircles.push(grp);
+  let life = 0, done = false;
+  const tick = () => { if (done) return; life += 0.04; grp.rotation.z += 0.025; parts.forEach(p => { const a = p.baseAngle + life * 1.4; p.mesh.position.set(Math.cos(a) * 3.7, Math.sin(a) * 3.7, 0); }); requestAnimationFrame(tick); }; tick();
+  const fadeOut = () => { done = true; let op = 1, fading = true; const fade = () => { if (!fading) return; op -= 0.045; grp.children.forEach(c => { if (c.material) c.material.opacity *= 0.93; }); if (op > 0) requestAnimationFrame(fade); else { scene.remove(grp); const ci = _activeCircles.indexOf(grp); if (ci >= 0) _activeCircles.splice(ci, 1); onDone && onDone(); } }; requestAnimationFrame(fade); };
+  return { grp, fadeOut };
+}
+
+function summonBallFromCircle(ball, circleColor, delay, onAllDone) {
+  const sx = ball.mesh.position.x, sz = ball.mesh.position.z;
+  ball.mesh.position.y = -4;
+  const circle = spawnMagicCircle(sx, sz, circleColor, null);
+  setTimeout(() => {
+    for (let i = 0; i < 12; i++) { const a = Math.random() * Math.PI * 2; spawnPart(new THREE.Vector3(sx, 0.2, sz), Math.cos(a) * 0.08, 0.18 + Math.random() * 0.14, Math.sin(a) * 0.08, '#' + circleColor.toString(16).padStart(6, '0'), 30); }
+    const startY = -4, targetY = GY, duration = 820, startTime = performance.now();
+    const rise = () => { const t = Math.min(1, (performance.now() - startTime) / duration), ease = 1 - Math.pow(1 - t, 3); ball.mesh.position.y = startY + (targetY - startY) * ease; if (t < 1) { requestAnimationFrame(rise); } else { ball.mesh.position.y = targetY; setTimeout(() => { circle.fadeOut(); onAllDone && onAllDone(); }, 300); } }; rise();
+  }, delay);
+}
+
+function startGame() {
+  navTo('game-ui'); spawnEnv(); applyWeather(currentWeather); resetNamePool();
+  yaw = Math.PI; pitch = 0;
+  const el = window.playerElement || 'fire';
+  playerBall = createBall(el, true, true, 0, 1); allBalls.push(playerBall);
+  updateSkillBtns(); updateBars();
+  if (window.gameMode === 'test') {
+    createDummy(); summonBallFromCircle(playerBall, 0x44aaff, 0, null);
+    isGameOver = true; setTimeout(() => { isGameOver = false; }, 1400);
+  } else {
+    const { a, e } = parseModeTeams(window.gameMode); const is1vX = window.gameMode.startsWith('1v');
+    const allyBalls = [], enemyBalls = [];
+    for (let i = 0; i < a; i++) { const b = createBall(Object.keys(COLORS)[Math.floor(Math.random() * 8)], true, false, i, Math.max(1, a)); allBalls.push(b); allyBalls.push(b); }
+    for (let i = 0; i < e; i++) { const b = createBall(is1vX ? getEnemyEl() : Object.keys(COLORS)[Math.floor(Math.random() * 8)], false, false, i, Math.max(1, e)); allBalls.push(b); enemyBalls.push(b); }
+    buildRoster(allBalls);
+    isGameOver = true;
+    summonBallFromCircle(playerBall, 0x44aaff, 0, null);
+    allyBalls.forEach((b, i) => summonBallFromCircle(b, 0x4488ff, 120 + i * 160, null));
+    enemyBalls.forEach((b, i) => summonBallFromCircle(b, 0xff3333, 120 + i * 160, null));
+    const maxDelay = 120 + Math.max(allyBalls.length, enemyBalls.length) * 160 + 1400;
+    setTimeout(() => { isGameOver = false; }, maxDelay);
+  }
+}
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  SECTION 12 — 3D SCENE INIT & ANIMATE LOOP                      ║
+// ╚══════════════════════════════════════════════════════════════════╝
+function init() {
+  scene = new THREE.Scene(); scene.background = new THREE.Color('#87CEEB'); scene.fog = new THREE.FogExp2('#b0c4d8', 0.008);
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(window.devicePixelRatio); document.body.appendChild(renderer.domElement);
+  mainDirLight = new THREE.DirectionalLight(0xffffff, 1.5); mainAmbLight = new THREE.AmbientLight(0xffffff, 0.6); scene.add(mainDirLight, mainAmbLight);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(420, 420), new THREE.MeshStandardMaterial({ color: '#3d5c1a' })); ground.rotation.x = -Math.PI / 2; scene.add(ground);
+  const grid = new THREE.GridHelper(420, 84, 0xffffff, 0xffffff); grid.material.opacity = 0.1; grid.material.transparent = true; scene.add(grid);
+  window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+  // Touch controls
+  window.addEventListener('touchstart', e => { const joy = document.getElementById('joy-con').getBoundingClientRect(); for (const t of e.changedTouches) { const dx = t.clientX - (joy.left + 45), dy = t.clientY - (joy.top + 45); if (Math.sqrt(dx * dx + dy * dy) < 60) moveTouchId = t.identifier; else if (t.target.tagName !== 'BUTTON') { lookTouchId = t.identifier; lastLookX = t.clientX; lastLookY = t.clientY; } } });
+  window.addEventListener('touchmove', e => { for (const t of e.changedTouches) { if (t.identifier === moveTouchId) { const r = document.getElementById('joy-con').getBoundingClientRect(); const dx = t.clientX - (r.left + 45), dy = t.clientY - (r.top + 45), dist = Math.min(dx * dx + dy * dy, 1225), a = Math.atan2(dy, dx); document.getElementById('joy-knob').style.transform = 'translate(' + Math.cos(a) * Math.sqrt(dist) + 'px,' + Math.sin(a) * Math.sqrt(dist) + 'px)'; moveVector = { x: (Math.cos(a) * Math.sqrt(dist)) / 35, z: (Math.sin(a) * Math.sqrt(dist)) / 35 }; } else if (t.identifier === lookTouchId) { yaw -= (t.clientX - lastLookX) * sensitivity; pitch += (t.clientY - lastLookY) * sensitivity; pitch = Math.max(-Math.PI / 2, Math.min(0, pitch)); lastLookX = t.clientX; lastLookY = t.clientY; } } });
+  window.addEventListener('touchend', e => { for (const t of e.changedTouches) { if (t.identifier === moveTouchId) { moveTouchId = null; moveVector = { x: 0, z: 0 }; document.getElementById('joy-knob').style.transform = ''; } if (t.identifier === lookTouchId) lookTouchId = null; } });
+  animate();
+}
+
+const _cycPairs = new Set();
+let _activeCircles = [];
+function animate() {
+  requestAnimationFrame(animate);
+  _cycPairs.clear();
+
+  // Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i]; p.userData.life--;
+    p.position.x += p.userData.vx; p.position.y += p.userData.vy; p.position.z += p.userData.vz;
+    p.userData.vy -= 0.014;
+    if (p.userData.isRing) { p.userData.ringScale = (p.userData.ringScale || 1) + 0.12; p.scale.setScalar(p.userData.ringScale); }
+    const frac = Math.max(0, p.userData.life / 55); p.material.opacity = frac;
+    if (p.userData.life <= 0) { scene.remove(p); if (p.userData.onDone) p.userData.onDone(); particles.splice(i, 1); }
+  }
+
+  // All balls tick
+  for (const b of allBalls) {
+    if (b.isDummy) { tickDummyAI(b); }
+    else if (!b.isPlayerControlled) {
+      tickBotAI(b);
+      // Bot dash movement — frame-by-frame, identical speed to player dash
+      if (b._normalDashing && b._dashFrames > 0) {
+        b._dashFrames--;
+        // Same trail as player normal dash (element-coloured sphere)
+        const tr = new THREE.Mesh(new THREE.SphereGeometry(0.7), new THREE.MeshBasicMaterial({ color: new THREE.Color(COLORS[b.element]), transparent: true, opacity: 0.55 })); tr.position.copy(b.mesh.position); scene.add(tr); dashTrails.push(tr);
+        b.mesh.position.x += b._dashDirX * 1.35; b.mesh.position.z += b._dashDirZ * 1.35;
+        if (b._dashFrames <= 0) { b._dashDirX = 0; b._dashDirZ = 0; }
+      } else if (b._skillDashing && b._dashFrames > 0) {
+        b._dashFrames--;
+        // Trail visuals — same as player skill dash (element-based)
+        if (b.dashEl === 'lightning') {
+          // 3 thick yellow zigzag lines trailing behind
+          const tLen = 4.0;
+          for (let s = 0; s < 3; s++) {
+            const pts = [];
+            for (let i = 0; i <= 5; i++) { const t2 = i / 5; pts.push(new THREE.Vector3(b.mesh.position.x - b._dashDirX * tLen * t2 + (Math.random() - 0.5) * 0.8, b.mesh.position.y + (Math.random() - 0.5) * 0.5, b.mesh.position.z - b._dashDirZ * tLen * t2 + (Math.random() - 0.5) * 0.8)); }
+            const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: s === 1 ? 0xffffff : 0xffff00, transparent: true, opacity: s === 1 ? 0.6 : 0.9 })); scene.add(ln); dashTrails.push(ln);
+          }
+        } else if (b.dashEl === 'light') {
+          // Simple thick yellow centre line + 2 white side lines trailing behind
+          const tLen = 4.0;
+          const tailX = b.mesh.position.x - b._dashDirX * tLen, tailZ = b.mesh.position.z - b._dashDirZ * tLen;
+          const yc = new THREE.CatmullRomCurve3([b.mesh.position.clone(), new THREE.Vector3(tailX, b.mesh.position.y, tailZ)]);
+          const yt = new THREE.Mesh(new THREE.TubeGeometry(yc, 3, 0.22, 5, false), new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.9 })); scene.add(yt); dashTrails.push(yt);
+          const perp = new THREE.Vector3(-b._dashDirZ, 0, b._dashDirX).normalize();
+          [-0.7, 0.7].forEach(sp => {
+            const off = perp.clone().multiplyScalar(sp);
+            const wc = new THREE.CatmullRomCurve3([new THREE.Vector3(b.mesh.position.x + off.x, b.mesh.position.y, b.mesh.position.z + off.z), new THREE.Vector3(tailX + off.x, b.mesh.position.y, tailZ + off.z)]);
+            const wt = new THREE.Mesh(new THREE.TubeGeometry(wc, 3, 0.08, 4, false), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 })); scene.add(wt); dashTrails.push(wt);
+          });
+        } else {
+          const tr3 = new THREE.Mesh(new THREE.SphereGeometry(0.7), new THREE.MeshBasicMaterial({ color: new THREE.Color(COLORS[b.element]), transparent: true, opacity: 0.55 })); tr3.position.copy(b.mesh.position); scene.add(tr3); dashTrails.push(tr3);
+        }
+        // Hit detection at current position each frame (same as player dashHitInterval)
+        if (b._skillDashHitFn) b._skillDashHitFn(b.mesh.position.x, b.mesh.position.z);
+        b.mesh.position.x += b._dashDirX * 1.35; b.mesh.position.z += b._dashDirZ * 1.35;
+        if (b._dashFrames <= 0) { b._dashDirX = 0; b._dashDirZ = 0; b._skillDashHitFn = null; }
+      }
+    }
+    else {
+      // Player movement (driven by joystick + dash state)
+      let movX = 0, movZ = 0;
+      if (isDashing) {
+        dashTime--;
+        if (b.dashEl === 'lightning') {
+          // 3 thick yellow zigzag lines trailing behind — simple, not too many
+          const tLen = 4.0;
+          for (let s = 0; s < 3; s++) {
+            const pts = [];
+            for (let i = 0; i <= 5; i++) { const t2 = i / 5; pts.push(new THREE.Vector3(b.mesh.position.x - dashDirX * tLen * t2 + (Math.random() - 0.5) * 0.8, b.mesh.position.y + (Math.random() - 0.5) * 0.5, b.mesh.position.z - dashDirZ * tLen * t2 + (Math.random() - 0.5) * 0.8)); }
+            const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: s === 1 ? 0xffffff : 0xffff00, transparent: true, opacity: s === 1 ? 0.6 : 0.9 })); scene.add(ln); dashTrails.push(ln);
+          }
+        } else if (b.dashEl === 'light') {
+          // Simple thick yellow centre line + 2 white side lines trailing behind
+          const tLen = 4.0;
+          const tailX = b.mesh.position.x - dashDirX * tLen, tailZ = b.mesh.position.z - dashDirZ * tLen;
+          const yc = new THREE.CatmullRomCurve3([b.mesh.position.clone(), new THREE.Vector3(tailX, b.mesh.position.y, tailZ)]);
+          const yt = new THREE.Mesh(new THREE.TubeGeometry(yc, 3, 0.22, 5, false), new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.9 })); scene.add(yt); dashTrails.push(yt);
+          const perp = new THREE.Vector3(-dashDirZ, 0, dashDirX).normalize();
+          [-0.7, 0.7].forEach(sp => {
+            const off = perp.clone().multiplyScalar(sp);
+            const wc = new THREE.CatmullRomCurve3([new THREE.Vector3(b.mesh.position.x + off.x, b.mesh.position.y, b.mesh.position.z + off.z), new THREE.Vector3(tailX + off.x, b.mesh.position.y, tailZ + off.z)]);
+            const wt = new THREE.Mesh(new THREE.TubeGeometry(wc, 3, 0.08, 4, false), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 })); scene.add(wt); dashTrails.push(wt);
+          });
+        } else {
+          const tr = new THREE.Mesh(new THREE.SphereGeometry(0.7), new THREE.MeshBasicMaterial({ color: new THREE.Color(COLORS[b.element]), transparent: true, opacity: 0.55 })); tr.position.copy(b.mesh.position); scene.add(tr); dashTrails.push(tr);
+        }
+        movX = dashDirX * 1.35; movZ = dashDirZ * 1.35;
+        if (dashTime <= 0) { isDashing = false; dashDirX = 0; dashDirZ = 0; }
+      } else if (moveTouchId !== null) {
+        const cosY = Math.cos(yaw), sinY = Math.sin(yaw), mx = moveVector.x, mz = moveVector.z;
+        const spd = b.undergroundSlowed ? 0.15 : b.slowed ? 0.15 : 0.30;
+        movX = (mx * cosY + mz * sinY) * spd; movZ = (-mx * sinY + mz * cosY) * spd;
+      }
+      b.mesh.position.x += movX; b.mesh.position.z += movZ;
+      b.mesh.rotation.y = -yaw;
+    }
+    tickPhysics(b);
+    // Floating HP/MP bars for bots
+    if (!b.isPlayerControlled && b.floatingUI) {
+      const uiPos = b.mesh.position.clone(); uiPos.y += 1.6; uiPos.project(camera);
+      if (uiPos.z < 1 && !b.invisible) { b.floatingUI.style.display = 'flex'; b.floatingUI.style.left = ((uiPos.x * 0.5 + 0.5) * window.innerWidth) + 'px'; b.floatingUI.style.top = ((-(uiPos.y * 0.5 - 0.5)) * window.innerHeight) + 'px'; b.floatingUI._hpF.style.width = Math.max(0, b.hp / b.maxHp * 100) + '%'; b.floatingUI._mpF.style.width = Math.max(0, b.mp / b.maxMp * 100) + '%'; }
+      else b.floatingUI.style.display = 'none';
+    }
+  }
+  updateRoster();
+
+  // Camera follows player
+  if (playerBall) {
+    camera.position.set(playerBall.mesh.position.x + 11 * Math.cos(pitch) * Math.sin(yaw), playerBall.mesh.position.y + 11 * Math.sin(pitch) + 5, playerBall.mesh.position.z + 11 * Math.cos(pitch) * Math.cos(yaw));
+    camera.lookAt(playerBall.mesh.position.x, playerBall.mesh.position.y + 1, playerBall.mesh.position.z);
+    updateBars();
+  }
+
+  // Projectile movement + hit detection
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    const p = projectiles[i]; p.position.x += p.userData.vx; p.position.y += p.userData.vy; p.position.z += p.userData.vz;
+    if (checkProjCollide(p, i)) continue;
+    let hit = false; const shooter = p.userData.shooter;
+    for (let j = allBalls.length - 1; j >= 0; j--) { const t = allBalls[j]; if (t === shooter || t.isAlly === p.userData.fromAlly || t.underground || t.invisible) continue; if (p.position.distanceTo(t.mesh.position) < 1.8) { dealDmg(shooter, t, p.userData.ap || 4); applyKb(t, p.position.x, p.position.z, 2); hit = true; break; } }
+    if (!hit) { for (const d of destructibles) { if (d.userData.sinking || d.userData.envType === 'bush') continue; if (d.userData.envType === 'tree') { const parts = d.userData.parts; if (!parts) continue; let th = false; for (const part of parts) { if (part.userData.dead) continue; const wp = new THREE.Vector3(); part.getWorldPosition(wp); if (p.position.distanceTo(wp) < 1.8) { damageEnv(d, p.userData.ap || 4, p.position.x, p.position.z, 0); hit = true; th = true; break; } } if (th) break; continue; } if (p.position.distanceTo(d.position) < (d.userData.radius || 1)) { damageEnv(d, p.userData.ap || 4, p.position.x, p.position.z, 2); hit = true; break; } } }
+    if (hit || --p.userData.life <= 0) { scene.remove(p); projectiles.splice(i, 1); }
+  }
+
+  // Dash trail fade
+  for (let i = dashTrails.length - 1; i >= 0; i--) { const t = dashTrails[i]; if (!t.material) { dashTrails.splice(i, 1); continue; } t.material.opacity -= 0.045; if (t.material.opacity <= 0) { scene.remove(t); dashTrails.splice(i, 1); } }
+
+  // Environment physics (Section 5)
+  tickEnvPhysics();
+
+  // Weather particle movement (Section 6)
+  updateWeatherParticles();
+
+  renderer.render(scene, camera);
+}
+
+init();
+
+// MP regen — one rule, applied equally to every ball
+setInterval(() => {
+  if (isGameOver || isDying) return;
+  allBalls.forEach(b => { if (b.mp < b.maxMp) b.mp = Math.min(b.maxMp, b.mp + BALL_DEF.mpRegen); });
+  updateBars();
+}, BALL_DEF.mpRegenMs);
+
+</script>
+</body>
+</html>
